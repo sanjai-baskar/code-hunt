@@ -109,44 +109,51 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
 
       let direction = null;
 
-      // Try Python API first for better gaze/face monitoring
-      try {
-        const canvas = canvasRef.current;
-        if (canvas) {
-          const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.7));
-          const formData = new FormData();
-          formData.append('file', blob);
-          
-          const pyRes = await fetch('http://localhost:8000/process', { 
-            method: 'POST', 
-            body: formData,
-            signal: AbortController.timeout(1000).signal // Don't hang if server down
-          });
-          
-          if (pyRes.ok) {
-            const data = await pyRes.json();
-            if (data.direction !== 'center') direction = data.direction;
-          } else {
-            throw new Error('Python API down');
+      // 1. ALWAYS check for forbidden objects locally (COCO-SSD is fast)
+      const forbiddenObj = predictions.find(p => RESTRICTED.includes(p.class) && p.score > 0.45);
+      if (forbiddenObj) {
+        direction = `object-${forbiddenObj.class.replace(' ', '-')}`;
+      } else {
+        // 2. If no objects, check face/gaze
+        try {
+          const canvas = canvasRef.current;
+          if (canvas) {
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.7));
+            const formData = new FormData();
+            formData.append('file', blob);
+            
+            const pyRes = await fetch('http://localhost:8000/process', { 
+              method: 'POST', 
+              body: formData,
+              signal: AbortController.timeout(1000).signal // Don't hang if server down
+            });
+            
+            if (pyRes.ok) {
+              const data = await pyRes.json();
+              if (data.direction !== 'center') direction = data.direction;
+            } else {
+              throw new Error('Python API down');
+            }
           }
-        }
-      } catch (err) {
-        // Fallback to internal COCO-SSD logic if Python API is unavailable
-        const forbiddenObj = predictions.find(p => RESTRICTED.includes(p.class) && p.score > 0.45);
-        const persons = predictions.filter(p => p.class === 'person' && p.score > 0.4);
+        } catch (err) {
+          // Fallback to internal COCO-SSD logic if Python API is unavailable
+          const persons = predictions.filter(p => p.class === 'person' && p.score > 0.4);
 
-        if (forbiddenObj) {
-          direction = `object-${forbiddenObj.class.replace(' ', '-')}`;
-        } else if (persons.length > 1) {
-          direction = 'multiple-faces';
-        } else if (persons.length === 0) {
-          direction = 'away';
-        } else if (persons.length === 1) {
-          const [bx, , bw] = persons[0].bbox;
-          const frameW = video.videoWidth || 320;
-          const ratio = (bx + bw / 2) / frameW;
-          if (ratio < 0.2) direction = 'right';
-          else if (ratio > 0.8) direction = 'left';
+          if (persons.length > 1) {
+            direction = 'multiple-faces';
+          } else if (persons.length === 0) {
+            direction = 'away';
+          } else if (persons.length === 1) {
+            const [bx, by, bw, bh] = persons[0].bbox;
+            const frameW = video.videoWidth || 320;
+            const frameH = video.videoHeight || 240;
+            const ratioX = (bx + bw / 2) / frameW;
+            const ratioY = (by + bh / 2) / frameH;
+            
+            if (ratioX < 0.2) direction = 'right';
+            else if (ratioX > 0.8) direction = 'left';
+            else if (ratioY < 0.2) direction = 'up';
+          }
         }
       }
 
