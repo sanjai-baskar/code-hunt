@@ -29,6 +29,15 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.get('/api/diag', async (req, res) => {
+  res.json({
+    hasDbUrl: !!process.env.DATABASE_URL,
+    dbUrlPrefix: process.env.DATABASE_URL ? process.env.DATABASE_URL.split(':')[0] : 'none',
+    nodeEnv: process.env.NODE_ENV,
+    cwd: process.cwd(),
+  });
+});
+
 // ─── 404 ──────────────────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({ error: `Route ${req.method} ${req.path} not found` });
