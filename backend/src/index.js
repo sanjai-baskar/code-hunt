@@ -30,10 +30,23 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/diag', async (req, res) => {
+  let dbStatus = 'testing';
+  try {
+    const { PrismaClient } = require('@prisma/client');
+    const p = new PrismaClient();
+    await p.$connect();
+    dbStatus = 'connected';
+    await p.$disconnect();
+  } catch (e) {
+    dbStatus = `error: ${e.message}`;
+  }
+
   res.json({
+    dbStatus,
     hasDbUrl: !!process.env.DATABASE_URL,
     dbUrlPrefix: process.env.DATABASE_URL ? process.env.DATABASE_URL.split(':')[0] : 'none',
     nodeEnv: process.env.NODE_ENV,
+    cwd: process.env.NODE_ENV,
     cwd: process.cwd(),
   });
 });
