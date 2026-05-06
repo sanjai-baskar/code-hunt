@@ -104,7 +104,12 @@ export default function CodingChallenge() {
 
     setDistractionCount((prev) => {
       const next = prev + 1;
-      addToast(`Distraction detected: Looking ${direction}`, 'warn');
+      const label = direction.startsWith('object-')
+        ? `Forbidden object: ${direction.replace('object-', '').replace('-', ' ')}`
+        : direction === 'multiple-faces'
+          ? 'Multiple faces detected!'
+          : `Looking ${direction}`;
+      addToast(`⚠️ ${label}`, 'warn');
       if (next >= 10) {
         setShowBanner(true);
         if (document.documentElement.requestFullscreen) {

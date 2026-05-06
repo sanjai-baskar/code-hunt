@@ -17,11 +17,20 @@ export function useFaceMonitor({ onDistraction, getCode, problemId }) {
    * @param {Object} results - MediaPipe FaceMesh results
    */
   const processDetection = useCallback(
-    (results) => {
+    (results, objects = []) => {
       let direction = null;
 
-      // 1. Check for Multiple Faces
-      if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 1) {
+      // 1. Check for forbidden objects (cell phone, laptop, etc.)
+      const forbidden = ["cell phone", "laptop", "tablet", "book", "remote"];
+      const foundForbidden = objects.find(
+        obj => forbidden.includes(obj.class) && obj.score > 0.5
+      );
+      if (foundForbidden) {
+        direction = `object-${foundForbidden.class.replace(' ', '-')}`;
+      }
+
+      // 2. Check for Multiple Faces
+      else if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 1) {
         direction = 'multiple-faces';
       } 
       // 2. Check for Gaze/Face Orientation (using the user's technique)

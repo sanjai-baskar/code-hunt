@@ -6,6 +6,7 @@ import { useFaceMonitor } from '../hooks/useFaceMonitor';
 export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const predictionsRef = useRef([]);
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [objectModel, setObjectModel] = useState(null);
   const [streamActive, setStreamActive] = useState(false);
@@ -13,7 +14,6 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
   const [position, setPosition] = useState({ x: 24, y: window.innerHeight - 240 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [lastPredictions, setLastPredictions] = useState([]);
 
   const { processDetection } = useFaceMonitor({ onDistraction, getCode, problemId });
 
@@ -21,7 +21,6 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
   useEffect(() => {
     const initModels = async () => {
       try {
-        // Configure TFJS backend
         try {
           await tf.setBackend('webgl');
         } catch (e) {
@@ -62,7 +61,7 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
 
         faceMesh.onResults((results) => {
           drawFrame(results);
-          processDetection(results);
+          processDetection(results, predictionsRef.current);
         });
 
         // @ts-ignore
@@ -104,7 +103,7 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
       if (videoRef.current && videoRef.current.readyState === 4) {
         try {
           const predictions = await objectModel.detect(videoRef.current);
-          setLastPredictions(predictions);
+          predictionsRef.current = predictions;
         } catch (err) {
           console.error("Object detection error:", err);
         }
@@ -133,7 +132,7 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
     }
 
     // Draw Objects
-    lastPredictions.forEach(pred => {
+    predictionsRef.current.forEach(pred => {
       if (pred.score > 0.4 && pred.class !== "person") {
         const [x, y, width, height] = pred.bbox;
         canvasCtx.strokeStyle = "#ffa116";
