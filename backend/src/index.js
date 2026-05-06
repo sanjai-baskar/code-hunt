@@ -17,12 +17,12 @@ app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
-app.use('/api/auth', authRoutes);
-app.use('/api/problems', problemRoutes);
-app.use('/api/run', runRoutes);
-app.use('/api/submit', submitRoutes);
-app.use('/api/logs', logRoutes);
-app.use('/api/admin', adminRoutes);
+app.use(['/api/auth', '/auth'], authRoutes);
+app.use(['/api/problems', '/problems'], problemRoutes);
+app.use(['/api/run', '/run'], runRoutes);
+app.use(['/api/submit', '/submit'], submitRoutes);
+app.use(['/api/logs', '/logs'], logRoutes);
+app.use(['/api/admin', '/admin'], adminRoutes);
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
