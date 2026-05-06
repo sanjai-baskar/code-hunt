@@ -2,6 +2,8 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
 import * as tf from '@tensorflow/tfjs';
 import api from '../api/client';
+import { useFaceMonitor } from '../hooks/useFaceMonitor';
+
 
 const RESTRICTED = ["cell phone", "laptop", "tablet", "book", "remote"];
 const GRACE_PERIOD = 5000;    // 5s grace period
@@ -26,6 +28,20 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
   const [position, setPosition] = useState({ x: 24, y: window.innerHeight - 240 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [status, setStatus] = useState('Initializing...');
+  const [lastEvent, setLastEvent] = useState(null);
+
+  const { processDetection } = useFaceMonitor({
+    onDistraction: (dir) => {
+      if (onDistraction) onDistraction(dir);
+      setLastEvent(dir);
+      setTimeout(() => setLastEvent(null), 3000);
+    },
+    getCode,
+    problemId
+  });
+
+
 
   // ── 1. Unified Initialization ─────────────────────────────────────────────
   useEffect(() => {
@@ -60,8 +76,19 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
           minDetectionConfidence: 0.5,
           minTrackingConfidence: 0.5
         });
-        fm.onResults(handleFaceResults);
+        fm.onResults((results) => {
+          if (!cancelled) {
+            processDetection(results, lastObjects.current);
+            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+              setStatus('Monitoring');
+            } else {
+              setStatus('Face Hidden');
+            }
+          }
+        });
+
         faceMeshRef.current = fm;
+
 
         if (!cancelled) setReady(true);
       } catch (err) {
@@ -78,62 +105,8 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
   }, []);
 
   // ── 2. Processing Loop ────────────────────────────────────────────────────
-  const handleFaceResults = useCallback((results) => {
-    if (Date.now() - mountTime.current < GRACE_PERIOD) return;
+  const lastObjects = useRef([]);
 
-    let direction = null;
-
-    // A. Check Face Presence/Multiple
-    if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
-      direction = 'away';
-    } else if (results.multiFaceLandmarks.length > 1) {
-      direction = 'multiple-faces';
-    } else {
-      // B. Check Gaze (Yaw/Pitch)
-      const landmarks = results.multiFaceLandmarks[0];
-      const nose = landmarks[1];
-      const leftEye = landmarks[133];
-      const rightEye = landmarks[362];
-      const topHead = landmarks[10];
-      const chin = landmarks[152];
-
-      const eyesMidX = (leftEye.x + rightEye.x) / 2;
-      const yaw = (nose.x - eyesMidX) / (rightEye.x - leftEye.x);
-      
-      const faceHeight = chin.y - topHead.y;
-      const pitch = (nose.y - topHead.y) / faceHeight;
-
-      if (yaw < -0.4) direction = 'right';
-      else if (yaw > 0.4) direction = 'left';
-      else if (pitch < 0.35) direction = 'up';
-    }
-
-    // C. Sustained Monitoring Logic
-    const now = Date.now();
-    if (direction === null) {
-      distractionStart.current = null;
-      currentDir.current = null;
-    } else {
-      if (distractionStart.current === null || direction !== currentDir.current) {
-        distractionStart.current = now;
-        currentDir.current = direction;
-      } else if (now - distractionStart.current >= SUSTAINED_MS) {
-        distractionStart.current = now;
-        if (onDistraction) onDistraction(direction);
-        
-        // Log to backend
-        if (problemId) {
-          api.post('/logs', { 
-            problemId, 
-            direction, 
-            startTime: new Date(now - SUSTAINED_MS).toISOString(), 
-            endTime: new Date(now).toISOString(),
-            codeSnapshot: getCode ? getCode() : ''
-          }).catch(() => {});
-        }
-      }
-    }
-  }, [onDistraction, getCode, problemId]);
 
   // Bounding Box Drawing & Object Detection
   useEffect(() => {
@@ -152,12 +125,10 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
         // 2. Process Objects (every 30th frame ~1s)
         if (frameCount.current % 30 === 0 && modelRef.current) {
           const preds = await modelRef.current.detect(video);
-          const forbidden = preds.find(p => RESTRICTED.includes(p.class) && p.score > 0.5);
-          if (forbidden && onDistraction) {
-            onDistraction(`object-${forbidden.class}`);
-          }
+          lastObjects.current = preds;
           drawBoxes(preds);
         }
+
       }
       animId = requestAnimationFrame(process);
     };
@@ -199,7 +170,13 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
         <div className="webcam-header flex justify-between px-2 py-1 bg-gray-800 text-white text-[10px]">
           <div className="flex items-center gap-1.5">
             <div className={`w-2 h-2 rounded-full ${ready ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-            <span>AI Proctoring</span>
+            <span className="font-medium">
+              {lastEvent ? (
+                <span className="text-red-400">⚠️ {lastEvent.toUpperCase()}</span>
+              ) : (
+                <span>AI: {status}</span>
+              )}
+            </span>
           </div>
         </div>
         <div className="relative aspect-video bg-black overflow-hidden rounded-b">
