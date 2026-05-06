@@ -39,7 +39,7 @@ export function useFaceMonitor({ onDistraction, getCode, problemId }) {
       else if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 1) {
         direction = 'multiple-faces';
       } 
-      // 3. Check for Gaze/Face Orientation (using distance ratios)
+      // 3. Check for Gaze/Face Orientation (using normalized offsets)
       else if (results.multiFaceLandmarks && results.multiFaceLandmarks.length === 1) {
         const landmarks = results.multiFaceLandmarks[0];
         
@@ -51,26 +51,29 @@ export function useFaceMonitor({ onDistraction, getCode, problemId }) {
         const topHead = landmarks[10];
         const chin = landmarks[152];
 
-        // 3a. Yaw (Left/Right)
-        // Distance from nose to eyes
-        const distL = Math.sqrt(Math.pow(nose.x - leftEye.x, 2) + Math.pow(nose.y - leftEye.y, 2));
-        const distR = Math.sqrt(Math.pow(nose.x - rightEye.x, 2) + Math.pow(nose.y - rightEye.y, 2));
+        // Calculate face dimensions for normalization
+        const faceWidth = Math.sqrt(Math.pow(rightEye.x - leftEye.x, 2) + Math.pow(rightEye.y - leftEye.y, 2));
+        const faceHeight = Math.sqrt(Math.pow(chin.x - topHead.x, 2) + Math.pow(chin.y - topHead.y, 2));
         
-        // In MediaPipe, leftEye(133) is the person's left.
-        // Turning RIGHT (towards person's right eye) -> nose moves closer to right eye, away from left eye.
-        // distL increases, distR decreases -> ratio distL/distR increases.
-        const yawRatio = distL / distR;
+        // Midpoints
+        const eyesMidX = (leftEye.x + rightEye.x) / 2;
+        const eyesMidY = (leftEye.y + rightEye.y) / 2;
+
+        // 3a. Yaw (Left/Right)
+        // In unmirrored image, rightEye is on the left (smaller X).
+        // If I turn MY RIGHT, nose moves towards rightEye (smaller X).
+        const yaw = (nose.x - eyesMidX) / faceWidth;
 
         // 3b. Pitch (Up/Down)
-        const distT = Math.abs(nose.y - topHead.y);
-        const distB = Math.abs(nose.y - chin.y);
-        const pitchRatio = distT / distB;
+        // If I look UP, nose moves UP (smaller Y).
+        const pitch = (nose.y - eyesMidY) / faceHeight;
 
-        // Thresholds (Tweakable)
-        if (yawRatio > 2.2) direction = 'right';
-        else if (yawRatio < 0.45) direction = 'left';
-        else if (pitchRatio < 0.5) direction = 'up';
-        // else if (pitchRatio > 1.8) direction = 'down'; // Optional: monitor looking down
+        // Thresholds (Sensitive and Robust)
+        // Yaw: Left is positive (> 0.2), Right is negative (< -0.2)
+        if (yaw < -0.22) direction = 'right';
+        else if (yaw > 0.22) direction = 'left';
+        // Pitch: Up is negative (< -0.05), Down is positive (> 0.35)
+        else if (pitch < -0.08) direction = 'up';
       } else {
         // No face visible
         direction = 'away';
@@ -94,9 +97,9 @@ export function useFaceMonitor({ onDistraction, getCode, problemId }) {
         return;
       }
 
-      // Sustained distraction rule: 3 seconds of sustained distraction triggers an event
+      // Sustained distraction rule: 2.5 seconds of sustained distraction triggers an event
       const elapsed = now - distractionStart.current;
-      if (elapsed >= 3000) {
+      if (elapsed >= 2500) {
         const startTime = new Date(distractionStart.current).toISOString();
         const endTime   = new Date(now).toISOString();
         const snapshot  = getCode ? getCode() : '';
