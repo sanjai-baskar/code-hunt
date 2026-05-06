@@ -15,10 +15,10 @@ function PrivateRoute({ children, requiredRole }) {
   const user = JSON.parse(localStorage.getItem('user') || 'null');
   
   if (!token || !user) {
-    // If the user was trying to access an admin route, send them to admin login
-    const isAdminRoute = window.location.pathname.startsWith('/admin');
-    return <Navigate to={isAdminRoute ? "/admin/login" : "/login"} replace />;
+    // Redirect everyone to the Home page portal if not logged in
+    return <Navigate to="/" replace />;
   }
+
 
   if (requiredRole && user.role !== requiredRole) {
     return <Navigate to={user.role === 'admin' ? '/admin' : '/student'} replace />;
