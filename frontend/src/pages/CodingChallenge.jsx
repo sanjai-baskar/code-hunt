@@ -86,6 +86,22 @@ export default function CodingChallenge() {
   }, []);
 
   const handleDistraction = useCallback((direction) => {
+    if (direction === 'away' || direction === 'camera-off') {
+      setIsDisqualified(true);
+      api.post('/logs', { 
+        problemId: id, 
+        direction: `CRITICAL_${direction}`, 
+        startTime: new Date().toISOString(), 
+        endTime: new Date().toISOString(), 
+        codeSnapshot: codeRef.current 
+      }).catch(() => {});
+      
+      alert("CRITICAL SECURITY VIOLATION: Video stream interrupted or face not detected. Your session has been terminated.");
+      localStorage.clear();
+      window.location.href = '/login';
+      return;
+    }
+
     setDistractionCount((prev) => {
       const next = prev + 1;
       addToast(`Distraction detected: Looking ${direction}`, 'warn');
@@ -97,7 +113,7 @@ export default function CodingChallenge() {
       }
       return next;
     });
-  }, [addToast]);
+  }, [addToast, id]);
 
   const runCode = async () => {
     setRunLoading(true);
@@ -162,46 +178,46 @@ export default function CodingChallenge() {
       {showBanner && <DistractionBanner count={distractionCount} />}
 
       {/* Navbar */}
-      <div className="lc-navbar shrink-0 justify-between px-6 bg-[var(--bg-card)]">
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/student')} className="text-[var(--text-muted)] hover:text-[var(--text-main)] text-sm">
-            ← Problems
+      <div className="lc-navbar shrink-0 justify-between px-4 md:px-6 bg-[var(--bg-card)]">
+        <div className="flex items-center gap-2 md:gap-4">
+          <button onClick={() => navigate('/student')} className="text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs md:text-sm">
+            ← <span className="hidden sm:inline">Problems</span>
           </button>
           <span className="text-[var(--border-main)]">|</span>
-          <h1 className="text-sm font-bold text-[var(--text-main)]">{problem?.title}</h1>
+          <h1 className="text-xs md:text-sm font-bold text-[var(--text-main)] truncate max-w-[120px] sm:max-w-none">{problem?.title}</h1>
         </div>
         
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-             <span>⏱ {formatted()}</span>
+        <div className="flex items-center gap-2 md:gap-6">
+          <div className="flex items-center gap-2 text-[10px] md:text-xs text-[var(--text-muted)]">
+             <span className="whitespace-nowrap">⏱ {formatted()}</span>
              <span className="text-[var(--border-main)]">|</span>
-             <span className={distractionCount >= 10 ? 'text-red-500' : 'text-[#ffa116]'}>
+             <span className={`${distractionCount >= 10 ? 'text-red-500' : 'text-[#ffa116]'} whitespace-nowrap`}>
                👁️ {distractionCount}/10
              </span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1 md:gap-2">
             <button 
               onClick={runCode} 
               disabled={runLoading || submitted}
-              className="lc-btn-secondary py-1.5 px-4 text-xs font-bold rounded disabled:opacity-50 transition-colors"
+              className="lc-btn-secondary py-1 px-2 md:py-1.5 md:px-4 text-[10px] md:text-xs font-bold rounded disabled:opacity-50 transition-colors"
             >
-              {runLoading ? 'Running...' : 'Run'}
+              {runLoading ? '...' : 'Run'}
             </button>
             <button 
               onClick={submitCode} 
               disabled={submitLoading || submitted}
-              className="px-4 py-1.5 bg-[#2cbb5d] hover:bg-[#34d399] text-white text-xs font-bold rounded disabled:opacity-50 transition-colors"
+              className="px-2 py-1 md:px-4 md:py-1.5 bg-[#2cbb5d] hover:bg-[#34d399] text-white text-[10px] md:text-xs font-bold rounded disabled:opacity-50 transition-colors"
             >
-              {submitLoading ? 'Submitting...' : submitted ? 'Submitted' : 'Submit'}
+              {submitLoading ? '...' : submitted ? 'Ok' : 'Submit'}
             </button>
           </div>
         </div>
       </div>
 
       {/* Workspace */}
-      <div className="flex-1 flex overflow-hidden p-2 gap-2">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden p-2 gap-2">
         {/* Left: Description */}
-        <div className="w-[45%] bg-[var(--bg-card)] rounded-lg border border-[var(--border-main)] overflow-y-auto p-6 scrollbar-hide">
+        <div className="w-full md:w-[45%] h-[40%] md:h-auto bg-[var(--bg-card)] rounded-lg border border-[var(--border-main)] overflow-y-auto p-4 md:p-6 scrollbar-hide">
           <h2 className="text-xl font-bold text-[var(--text-main)] mb-4">{problem?.title}</h2>
           <div className="mb-4">
             <span className={`badge-${problem?.difficulty.toLowerCase()}`}>

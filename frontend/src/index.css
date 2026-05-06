@@ -97,8 +97,13 @@ html, body, #root {
 .webcam-monitor {
   position: fixed;
   z-index: 5000;
-  width: 220px;
+  width: 160px;
   cursor: move;
+}
+@media (min-width: 768px) {
+  .webcam-monitor {
+    width: 220px;
+  }
 }
 .webcam-inner {
   background: #ffffff;

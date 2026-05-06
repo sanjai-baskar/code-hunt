@@ -24,10 +24,10 @@ export default function StudentDashboard() {
   return (
     <div className="min-h-screen bg-[var(--bg-dark)]">
       {/* Navbar */}
-      <nav className="lc-navbar">
+      <nav className="lc-navbar px-4 md:px-6">
         <div className="max-w-6xl mx-auto w-full flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <h1 className="text-xl font-bold text-[#ffa116]">Code Hunt</h1>
+          <div className="flex items-center gap-2 md:gap-6">
+            <h1 className="text-lg md:text-xl font-bold text-[#ffa116]">Code Hunt</h1>
             <div className="hidden md:flex gap-4 text-sm text-[var(--text-muted)]">
               <span className="text-[var(--text-main)] cursor-pointer font-medium">Problems</span>
               <span className="hover:text-[var(--text-main)] cursor-pointer">Contests</span>
@@ -76,18 +76,18 @@ export default function StudentDashboard() {
                       className="problem-row"
                       onClick={() => navigate(`/challenge/${p.id}`)}
                     >
-                      <div className="w-8 text-[var(--text-muted)] text-sm">{i + 1}.</div>
-                      <div className="flex-1">
-                        <span className="text-[var(--text-main)] hover:text-[#ffa116] font-medium transition-colors">
+                      <div className="w-6 md:w-8 text-[var(--text-muted)] text-[10px] md:text-sm">{i + 1}.</div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs md:text-sm text-[var(--text-main)] hover:text-[#ffa116] font-medium transition-colors truncate block">
                           {p.title}
                         </span>
                       </div>
-                      <div className="w-24 text-center">
-                        <span className={`badge-${p.difficulty.toLowerCase()}`}>
+                      <div className="w-16 md:w-24 text-center">
+                        <span className={`badge-${p.difficulty.toLowerCase()} text-[10px] md:text-xs`}>
                           {p.difficulty}
                         </span>
                       </div>
-                      <div className="w-20 text-right">
+                      <div className="hidden sm:block w-20 text-right">
                         <span className="text-xs text-[#2cbb5d]">Solve →</span>
                       </div>
                     </div>

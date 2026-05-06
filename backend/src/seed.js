@@ -141,14 +141,17 @@ class Solution {
 async function main() {
   console.log('🌱 Seeding database...');
 
-  const adminPassword = await bcrypt.hash('admin123', 10);
+  const adminPassword = await bcrypt.hash('sanjai28%$#@', 10);
   const admin = await prisma.user.upsert({
     where: { email: 'admin@codehunt.com' },
-    update: {},
+    update: {
+      password: adminPassword,
+      name: 'Sanjai Admin',
+    },
     create: {
       email: 'admin@codehunt.com',
       password: adminPassword,
-      name: 'Admin User',
+      name: 'Sanjai Admin',
       role: 'admin',
     },
   });

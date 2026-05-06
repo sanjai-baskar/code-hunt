@@ -83,6 +83,7 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
       } catch (err) {
         console.error("MediaPipe setup failed:", err);
         setError('Camera initialization failed');
+        if (onDistraction) onDistraction('camera-off');
       }
     };
 
@@ -160,7 +161,7 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
   }, [isDragging, dragOffset]);
 
   return (
-    <div className="webcam-monitor" style={{ left: position.x, top: position.y }} onMouseDown={handleMouseDown}>
+    <div className="webcam-monitor w-[160px] md:w-[220px]" style={{ left: position.x, top: position.y }} onMouseDown={handleMouseDown}>
       <div className="webcam-inner">
         <div className="webcam-header">
           <div className="flex items-center gap-1.5">
