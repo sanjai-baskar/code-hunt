@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "npm install --prefix frontend && npm run build --prefix frontend && npm install --prefix backend && npx prisma generate --schema=backend/prisma/schema.prisma"
+    "build": "npm install --prefix frontend && npm run build --prefix frontend && rm -rf public && mkdir public && cp -r frontend/dist/* public/ && npm install --prefix backend && npx prisma generate --schema=backend/prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "^5.10.0"
