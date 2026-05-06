@@ -16,39 +16,28 @@ export default function TestResults({ results, summary }) {
             key={idx} 
             className={`lc-card p-3 border-l-4 ${res.passed ? 'border-l-[#2cbb5d]' : 'border-l-[#ef4743]'}`}
           >
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tighter">Test Case #{idx + 1}</span>
-              <span className={`text-[10px] font-bold uppercase ${res.passed ? 'text-[#2cbb5d]' : res.expected ? 'text-[#ef4743]' : 'text-[#ffa116]'}`}>
-                {res.passed ? 'Passed' : res.expected ? 'Failed' : 'Executed'}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] font-bold uppercase ${res.passed ? 'text-[#2cbb5d]' : 'text-[#ef4743]'}`}>
+                  {res.passed ? '✓ Passed' : '✗ Failed'}
+                </span>
+              </div>
             </div>
             
-            <div className="space-y-1 font-mono text-[11px]">
-              <div className="flex">
-                <span className="w-16 text-[var(--text-muted)] shrink-0">Input:</span>
-                <span className="text-[#ffa116] truncate whitespace-pre-wrap">{res.input}</span>
-              </div>
-              <div className="flex">
-                <span className="w-16 text-[var(--text-muted)] shrink-0">Expected:</span>
-                <span className="text-[var(--text-main)] whitespace-pre-wrap">{res.expected}</span>
-              </div>
-              <div className="flex">
-                <span className="w-16 text-[var(--text-muted)] shrink-0">Actual:</span>
-                <span className={`whitespace-pre-wrap ${res.passed ? 'text-[#2cbb5d]' : res.expected ? 'text-[#ef4743]' : 'text-[var(--text-main)]'}`}>{res.actual}</span>
-              </div>
-            </div>
-
-            {res.logs && res.logs.length > 0 && (
-              <div className="mt-2 pt-2 border-t border-[var(--border-main)]">
-                <p className="text-[9px] text-[var(--text-muted)] uppercase font-bold mb-1">Console Logs:</p>
-                <div className="bg-[var(--bg-dark)] border border-[var(--border-main)] p-2 rounded text-[10px] text-[var(--text-main)] font-mono max-h-24 overflow-y-auto">
-                  {res.logs.map((log, i) => <div key={i}>{log}</div>)}
-                </div>
-              </div>
+            {/* Details hidden for students for exam security */}
+            {!res.passed && (
+              <p className="mt-2 text-[9px] text-[var(--text-muted)] italic">
+                Details are hidden to maintain exam integrity.
+              </p>
             )}
           </div>
         ))}
       </div>
+      
+      <p className="mt-4 text-[10px] text-center text-[var(--text-muted)] italic">
+        * Only public test cases are shown above. Final submission will include hidden cases.
+      </p>
     </div>
   );
 }
