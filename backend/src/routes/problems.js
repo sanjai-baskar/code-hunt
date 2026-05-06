@@ -11,10 +11,14 @@ router.get('/', authenticateToken, async (req, res) => {
     const problems = await prisma.problem.findMany({
       orderBy: { createdAt: 'desc' },
     });
-    const parsed = problems.map((p) => ({
-      ...p,
-      testCases: JSON.parse(p.testCases),
-    }));
+    const isAdmin = req.user.role === 'admin';
+    const parsed = problems.map((p) => {
+      const cases = JSON.parse(p.testCases);
+      return {
+        ...p,
+        testCases: isAdmin ? cases : cases.filter(c => !c.hidden),
+      };
+    });
     res.json(parsed);
   } catch (err) {
     console.error(err);
@@ -27,7 +31,12 @@ router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const problem = await prisma.problem.findUnique({ where: { id: req.params.id } });
     if (!problem) return res.status(404).json({ error: 'Problem not found' });
-    res.json({ ...problem, testCases: JSON.parse(problem.testCases) });
+    const isAdmin = req.user.role === 'admin';
+    const cases = JSON.parse(problem.testCases);
+    res.json({ 
+      ...problem, 
+      testCases: isAdmin ? cases : cases.filter(c => !c.hidden) 
+    });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
   }

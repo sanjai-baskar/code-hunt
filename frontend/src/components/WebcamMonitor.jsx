@@ -105,35 +105,49 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
 
       // ── Process detections for proctoring ──
       const elapsed = Date.now() - mountTime.current;
-      if (elapsed < GRACE_PERIOD) return; // Skip during grace period
+      if (elapsed < GRACE_PERIOD) return;
 
-      // Check for forbidden objects
-      const forbiddenObj = predictions.find(
-        p => RESTRICTED.includes(p.class) && p.score > 0.45
-      );
-
-      // Check for person (face/body presence)
-      const persons = predictions.filter(p => p.class === 'person' && p.score > 0.4);
-
-      // Determine distraction direction
       let direction = null;
 
-      if (forbiddenObj) {
-        direction = `object-${forbiddenObj.class.replace(' ', '-')}`;
-      } else if (persons.length > 1) {
-        direction = 'multiple-faces';
-      } else if (persons.length === 0) {
-        direction = 'away';
-      } else if (persons.length === 1) {
-        // Simple gaze check using person bbox position
-        const [bx, , bw] = persons[0].bbox;
-        const frameW = video.videoWidth || 320;
-        const centerX = bx + bw / 2;
-        const ratio = centerX / frameW;
+      // Try Python API first for better gaze/face monitoring
+      try {
+        const canvas = canvasRef.current;
+        if (canvas) {
+          const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.7));
+          const formData = new FormData();
+          formData.append('file', blob);
+          
+          const pyRes = await fetch('http://localhost:8000/process', { 
+            method: 'POST', 
+            body: formData,
+            signal: AbortController.timeout(1000).signal // Don't hang if server down
+          });
+          
+          if (pyRes.ok) {
+            const data = await pyRes.json();
+            if (data.direction !== 'center') direction = data.direction;
+          } else {
+            throw new Error('Python API down');
+          }
+        }
+      } catch (err) {
+        // Fallback to internal COCO-SSD logic if Python API is unavailable
+        const forbiddenObj = predictions.find(p => RESTRICTED.includes(p.class) && p.score > 0.45);
+        const persons = predictions.filter(p => p.class === 'person' && p.score > 0.4);
 
-        // Person too far left or right in frame = looking away
-        if (ratio < 0.2) direction = 'right';      // Mirrored: person on left = looking right
-        else if (ratio > 0.8) direction = 'left';   // Mirrored: person on right = looking left
+        if (forbiddenObj) {
+          direction = `object-${forbiddenObj.class.replace(' ', '-')}`;
+        } else if (persons.length > 1) {
+          direction = 'multiple-faces';
+        } else if (persons.length === 0) {
+          direction = 'away';
+        } else if (persons.length === 1) {
+          const [bx, , bw] = persons[0].bbox;
+          const frameW = video.videoWidth || 320;
+          const ratio = (bx + bw / 2) / frameW;
+          if (ratio < 0.2) direction = 'right';
+          else if (ratio > 0.8) direction = 'left';
+        }
       }
 
       // ── Sustained distraction logic ──

@@ -136,26 +136,48 @@ export default function AdminProblemForm({ problem, onClose, onSaved }) {
             </div>
             <div className="space-y-3">
               {formData.testCases.map((tc, idx) => (
-                <div key={idx} className="flex gap-3 items-start">
-                  <div className="flex-1 space-y-2">
-                    <textarea 
-                      required 
-                      className="lc-input text-xs font-mono min-h-[60px]" 
-                      placeholder="Standard Input (e.g. 5\n1 2 3 4 5)" 
-                      value={tc.input} 
-                      onChange={e => updateTestCase(idx, 'input', e.target.value)}
-                    />
-                    <textarea 
-                      required 
-                      className="lc-input text-xs font-mono min-h-[60px]" 
-                      placeholder="Expected Output (e.g. 15)" 
-                      value={tc.output} 
-                      onChange={e => updateTestCase(idx, 'output', e.target.value)}
-                    />
+                <div key={idx} className="lc-card p-4 bg-gray-50/50">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-xs font-bold text-gray-400">Test Case #{idx + 1}</span>
+                    <div className="flex items-center gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={tc.hidden || false} 
+                          onChange={e => updateTestCase(idx, 'hidden', e.target.checked)}
+                          className="w-4 h-4 rounded border-gray-300 text-[#45A29E] focus:ring-[#45A29E]"
+                        />
+                        <span className="text-xs font-medium text-gray-600">Hidden Case</span>
+                      </label>
+                      {formData.testCases.length > 1 && (
+                        <button type="button" onClick={() => removeTestCase(idx)} className="text-[#ef4743] hover:text-red-600">
+                          <span className="text-xs font-medium">Remove</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {formData.testCases.length > 1 && (
-                    <button type="button" onClick={() => removeTestCase(idx)} className="p-2 text-[#ef4743] hover:bg-red-50 rounded">✕</button>
-                  )}
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Input</label>
+                      <textarea 
+                        required 
+                        className="lc-input text-xs font-mono min-h-[60px] bg-white" 
+                        placeholder="e.g. 5\n1 2 3" 
+                        value={tc.input} 
+                        onChange={e => updateTestCase(idx, 'input', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-gray-400 mb-1">Expected Output</label>
+                      <textarea 
+                        required 
+                        className="lc-input text-xs font-mono min-h-[60px] bg-white" 
+                        placeholder="e.g. 15" 
+                        value={tc.output} 
+                        onChange={e => updateTestCase(idx, 'output', e.target.value)}
+                      />
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

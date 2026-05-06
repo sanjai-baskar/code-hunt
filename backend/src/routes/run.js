@@ -23,8 +23,8 @@ router.post('/', authenticateToken, async (req, res) => {
       // Use custom input
       testCases = [{ input: customInput, output: '' }];
     } else {
-      // Use predefined test cases
-      testCases = JSON.parse(problem.testCases);
+      // Use predefined test cases (only non-hidden ones for /run)
+      testCases = JSON.parse(problem.testCases).filter(c => !c.hidden);
     }
     
     const results = await runCode(code, testCases, problem.functionName);
