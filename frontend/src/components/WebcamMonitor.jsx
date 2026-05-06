@@ -1,56 +1,59 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
 import * as tf from '@tensorflow/tfjs';
-import { useFaceMonitor } from '../hooks/useFaceMonitor';
+import api from '../api/client';
 
 const RESTRICTED = ["cell phone", "laptop", "tablet", "book", "remote"];
+const GRACE_PERIOD = 10000; // 10s grace period before monitoring starts
+const DETECTION_INTERVAL = 2500; // Run detection every 2.5s
+const SUSTAINED_MS = 5000; // 5s sustained distraction to trigger event
 
 export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
   const videoRef   = useRef(null);
   const canvasRef  = useRef(null);
   const modelRef   = useRef(null);
-  const faceRef    = useRef(null);
-  const predsRef   = useRef([]);
   const streamRef  = useRef(null);
+  const mountTime  = useRef(Date.now());
 
-  const [ready, setReady]       = useState(false);
-  const [error, setError]       = useState('');
+  // Distraction tracking refs (no state = no re-renders)
+  const distractionStart = useRef(null);
+  const currentDir       = useRef(null);
+
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState('');
+
+  // Draggable state
   const [position, setPosition] = useState({ x: 24, y: window.innerHeight - 240 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
-  const { processDetection } = useFaceMonitor({ onDistraction, getCode, problemId });
-
-  // ── 1. Start webcam with plain getUserMedia (smooth, no wrapper) ────────
+  // ── 1. Start webcam + load model (runs once) ─────────────────────────────
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
+      // Get webcam stream
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+          video: { width: { ideal: 320 }, height: { ideal: 240 }, facingMode: 'user' },
           audio: false
         });
-
         if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
-
         streamRef.current = stream;
+
         const video = videoRef.current;
         if (video) {
           video.srcObject = stream;
           await video.play();
-
           // Set canvas size once
-          const canvas = canvasRef.current;
-          if (canvas) {
-            canvas.width  = video.videoWidth  || 640;
-            canvas.height = video.videoHeight || 480;
+          if (canvasRef.current) {
+            canvasRef.current.width  = video.videoWidth  || 320;
+            canvasRef.current.height = video.videoHeight || 240;
           }
         }
       } catch (err) {
-        console.error('[Webcam] getUserMedia failed:', err);
+        console.error('[Webcam] Camera failed:', err);
         setError('Camera access denied');
-        if (onDistraction) onDistraction('camera-off');
         return;
       }
 
@@ -58,31 +61,18 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
       try {
         try { await tf.setBackend('webgl'); } catch { await tf.setBackend('cpu'); }
         await tf.ready();
-        modelRef.current = await cocoSsd.load();
-        console.log('[AI] COCO-SSD ready');
+        modelRef.current = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
+        console.log('[AI] COCO-SSD lite model ready');
       } catch (e) {
-        console.error('[AI] COCO-SSD failed:', e);
-      }
-
-      // Load FaceMesh
-      try {
-        // @ts-ignore
-        const fm = new window.FaceMesh({
-          locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`
-        });
-        fm.setOptions({
-          maxNumFaces: 1,
-          refineLandmarks: true,
-          minDetectionConfidence: 0.5,
-          minTrackingConfidence: 0.5,
-        });
-        fm.onResults(results => {
-          processDetection(results, predsRef.current);
-        });
-        faceRef.current = fm;
-        console.log('[AI] FaceMesh ready');
-      } catch (e) {
-        console.error('[AI] FaceMesh failed:', e);
+        console.error('[AI] Model load failed:', e);
+        // Try fallback to default model
+        try {
+          modelRef.current = await cocoSsd.load();
+          console.log('[AI] COCO-SSD default model ready');
+        } catch {
+          setError('AI model failed to load');
+          return;
+        }
       }
 
       if (!cancelled) setReady(true);
@@ -90,54 +80,104 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
 
     return () => {
       cancelled = true;
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(t => t.stop());
-      }
-      if (faceRef.current) {
-        try { faceRef.current.close(); } catch {}
-      }
+      if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
     };
-  }, [onDistraction, processDetection]);
+  }, []);
 
-  // ── 2. Throttled FaceMesh loop (every 600ms — NOT every frame) ──────────
+  // ── 2. Detection loop (single setInterval, runs every 2.5s) ──────────────
   useEffect(() => {
     if (!ready) return;
-    const id = setInterval(async () => {
+
+    const intervalId = setInterval(async () => {
       const video = videoRef.current;
-      const fm    = faceRef.current;
-      if (!video || !fm || video.paused || video.readyState < 2) return;
+      const model = modelRef.current;
+      if (!video || !model || video.paused || video.readyState < 2) return;
+
+      let predictions;
       try {
-        await fm.send({ image: video });
-      } catch { /* ignore transient errors */ }
-    }, 600);
+        predictions = await model.detect(video);
+      } catch {
+        return; // silently skip failed frames
+      }
 
-    return () => clearInterval(id);
-  }, [ready]);
+      // Draw bounding boxes on canvas
+      drawBoxes(predictions);
 
-  // ── 3. COCO-SSD object detection loop (every 3s) ───────────────────────
-  useEffect(() => {
-    if (!ready) return;
-    const id = setInterval(async () => {
-      const video = videoRef.current;
-      if (!video || !modelRef.current || video.paused || video.readyState < 2) return;
-      try {
-        const preds = await modelRef.current.detect(video);
-        predsRef.current = preds;
+      // ── Process detections for proctoring ──
+      const elapsed = Date.now() - mountTime.current;
+      if (elapsed < GRACE_PERIOD) return; // Skip during grace period
 
-        // Draw bounding boxes
-        drawBoxes(preds);
+      // Check for forbidden objects
+      const forbiddenObj = predictions.find(
+        p => RESTRICTED.includes(p.class) && p.score > 0.45
+      );
 
-        const found = preds.filter(p => p.score > 0.4 && p.class !== 'person');
-        if (found.length) {
-          console.log('[COCO-SSD]', found.map(p => `${p.class} ${Math.round(p.score*100)}%`).join(' | '));
+      // Check for person (face/body presence)
+      const persons = predictions.filter(p => p.class === 'person' && p.score > 0.4);
+
+      // Determine distraction direction
+      let direction = null;
+
+      if (forbiddenObj) {
+        direction = `object-${forbiddenObj.class.replace(' ', '-')}`;
+      } else if (persons.length > 1) {
+        direction = 'multiple-faces';
+      } else if (persons.length === 0) {
+        direction = 'away';
+      } else if (persons.length === 1) {
+        // Simple gaze check using person bbox position
+        const [bx, , bw] = persons[0].bbox;
+        const frameW = video.videoWidth || 320;
+        const centerX = bx + bw / 2;
+        const ratio = centerX / frameW;
+
+        // Person too far left or right in frame = looking away
+        if (ratio < 0.2) direction = 'right';      // Mirrored: person on left = looking right
+        else if (ratio > 0.8) direction = 'left';   // Mirrored: person on right = looking left
+      }
+
+      // ── Sustained distraction logic ──
+      const now = Date.now();
+
+      if (direction === null) {
+        // Looking at screen, reset
+        distractionStart.current = null;
+        currentDir.current = null;
+        return;
+      }
+
+      // New distraction or direction changed
+      if (distractionStart.current === null || direction !== currentDir.current) {
+        distractionStart.current = now;
+        currentDir.current = direction;
+        return;
+      }
+
+      // Check if sustained long enough
+      if (now - distractionStart.current >= SUSTAINED_MS) {
+        distractionStart.current = now; // Reset so it doesn't fire every interval
+
+        // Log to backend
+        const startTime = new Date(now - SUSTAINED_MS).toISOString();
+        const endTime = new Date(now).toISOString();
+        const snapshot = getCode ? getCode() : '';
+
+        if (problemId) {
+          api.post('/logs', { problemId, direction, startTime, endTime, codeSnapshot: snapshot }).catch(() => {});
         }
-      } catch { /* ignore */ }
-    }, 3000);
 
-    return () => clearInterval(id);
-  }, [ready]);
+        // Save to IndexedDB backup
+        saveToIndexedDB({ direction, startTime, endTime, codeSnapshot: snapshot, problemId });
 
-  // ── 4. Draw object boxes only (no face mesh drawing = no flicker) ───────
+        // Trigger UI callback
+        if (onDistraction) onDistraction(direction);
+      }
+    }, DETECTION_INTERVAL);
+
+    return () => clearInterval(intervalId);
+  }, [ready, getCode, onDistraction, problemId]);
+
+  // ── 3. Draw object boxes on canvas ────────────────────────────────────────
   const drawBoxes = useCallback((preds) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -146,30 +186,34 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
 
     preds.forEach(pred => {
       if (pred.score < 0.4 || pred.class === 'person') return;
+
       const [x, y, w, h] = pred.bbox;
       const restricted = RESTRICTED.includes(pred.class);
       const color = restricted ? '#ef4743' : '#ffa116';
 
+      // Bounding box
       ctx.strokeStyle = color;
-      ctx.lineWidth   = 2;
+      ctx.lineWidth = 2;
       ctx.strokeRect(x, y, w, h);
 
+      // Label
       const label = `${pred.class} ${Math.round(pred.score * 100)}%`;
-      ctx.font = 'bold 11px Arial';
-      const tw = ctx.measureText(label).width + 8;
-      const ly = y > 20 ? y - 16 : y + h + 2;
+      ctx.font = 'bold 10px Arial';
+      const tw = ctx.measureText(label).width + 6;
+      const ly = y > 16 ? y - 14 : y + h + 2;
       ctx.fillStyle = color;
-      ctx.fillRect(x, ly, tw, 16);
+      ctx.fillRect(x, ly, tw, 14);
       ctx.fillStyle = '#fff';
-      ctx.fillText(label, x + 4, ly + 12);
+      ctx.fillText(label, x + 3, ly + 10);
     });
   }, []);
 
-  // ── 5. Draggable ──────────────────────────────────────────────────────────
+  // ── 4. Draggable ──────────────────────────────────────────────────────────
   const handleMouseDown = e => {
     setIsDragging(true);
     setDragOffset({ x: e.clientX - position.x, y: e.clientY - position.y });
   };
+
   useEffect(() => {
     const move = e => isDragging && setPosition({ x: e.clientX - dragOffset.x, y: e.clientY - dragOffset.y });
     const up = () => setIsDragging(false);
@@ -178,7 +222,7 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
     return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
   }, [isDragging, dragOffset]);
 
-  // ── 6. Render ─────────────────────────────────────────────────────────────
+  // ── 5. Render ─────────────────────────────────────────────────────────────
   return (
     <div
       className="webcam-monitor w-[160px] md:w-[220px]"
@@ -191,13 +235,13 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
             <div className={`w-2 h-2 rounded-full ${ready ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
             <span>AI Proctoring</span>
           </div>
-          <span className="opacity-50 text-[9px]">{ready ? 'LIVE' : '...'}</span>
+          <span className="opacity-50 text-[9px]">{ready ? 'LIVE' : 'Loading...'}</span>
         </div>
 
         <div className="relative aspect-video bg-black overflow-hidden rounded-b">
           {error && (
             <div className="absolute inset-0 flex items-center justify-center text-[10px] text-red-400 p-2 text-center bg-black/90 z-20">
-              {error}
+              ⚠️ {error}
             </div>
           )}
 
@@ -224,4 +268,22 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
       </div>
     </div>
   );
+}
+
+// ── IndexedDB backup ────────────────────────────────────────────────────────
+function saveToIndexedDB(logEntry) {
+  try {
+    const request = indexedDB.open('CodeHuntLogs', 1);
+    request.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('distractions')) {
+        db.createObjectStore('distractions', { autoIncrement: true });
+      }
+    };
+    request.onsuccess = (e) => {
+      const db = e.target.result;
+      const tx = db.transaction('distractions', 'readwrite');
+      tx.objectStore('distractions').add({ ...logEntry, savedAt: new Date().toISOString() });
+    };
+  } catch { /* IndexedDB not available */ }
 }
