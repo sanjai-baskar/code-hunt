@@ -196,18 +196,18 @@ export default function CodingChallenge() {
   };
 
   if (loading) return (
-    <div className="h-screen bg-[#0a0a0a] flex items-center justify-center">
-      <div className="w-10 h-10 border-4 border-[#ffa116] border-t-transparent rounded-full animate-spin"></div>
+    <div className="h-screen bg-background flex items-center justify-center">
+      <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
 
   return (
-    <div className="h-screen flex flex-col bg-[#0a0a0a] overflow-hidden">
+    <div className="h-screen flex flex-col bg-background text-foreground transition-colors duration-300 overflow-hidden">
       {!hasStarted && (
-        <div className="fixed inset-0 z-[10000] bg-[#0a0a0a] flex items-center justify-center p-6 text-center">
-          <div className="max-w-md w-full lc-card p-10 border-2 border-[#ffa116]">
-            <h2 className="text-3xl font-black text-white mb-4">Exam Security</h2>
-            <p className="text-gray-400 text-sm mb-8 leading-relaxed">
+        <div className="fixed inset-0 z-[10000] bg-background/95 backdrop-blur flex items-center justify-center p-6 text-center">
+          <div className="max-w-md w-full lc-card p-10 border-2 border-brand bg-surface">
+            <h2 className="text-3xl font-black text-foreground mb-4">Exam Security</h2>
+            <p className="text-muted text-sm mb-8 leading-relaxed">
               This environment is proctored by AI. By starting, you agree to:
               <br /><br />
               • Automatic <strong>Full Screen</strong> mode<br />
@@ -227,20 +227,20 @@ export default function CodingChallenge() {
       {showBanner && <DistractionBanner count={distractionCount} />}
 
       {/* Navbar */}
-      <div className="lc-navbar shrink-0 justify-between px-4 md:px-6 bg-[#141414] border-b border-[#262626]">
+      <div className="lc-navbar shrink-0 justify-between px-4 md:px-6 bg-surface border-b border-border">
         <div className="flex items-center gap-2 md:gap-4">
-          <button onClick={() => navigate('/student')} className="text-gray-400 hover:text-white text-xs md:text-sm">
+          <button onClick={() => navigate('/student')} className="text-muted hover:text-foreground text-xs md:text-sm">
             ← <span className="hidden sm:inline">Problems</span>
           </button>
-          <span className="text-[#262626]">|</span>
-          <h1 className="text-xs md:text-sm font-bold text-white truncate max-w-[120px] sm:max-w-none">{problem?.title}</h1>
+          <span className="text-border">|</span>
+          <h1 className="text-xs md:text-sm font-bold text-foreground truncate max-w-[120px] sm:max-w-none">{problem?.title}</h1>
         </div>
-
+        
         <div className="flex items-center gap-2 md:gap-6">
-          <div className="flex items-center gap-2 text-[10px] md:text-xs text-gray-400">
-            <span className="whitespace-nowrap">⏱ {formatted()}</span>
-            <span className="text-[#262626]">|</span>
-            <span className={`${distractionCount >= 10 ? 'text-red-500' : 'text-[#ffa116]'} whitespace-nowrap`}>
+          <div className="flex items-center gap-2 text-[10px] md:text-xs text-muted">
+             <span className="whitespace-nowrap">⏱ {formatted()}</span>
+             <span className="text-border">|</span>
+             <span className={`${distractionCount >= 10 ? 'text-red-500' : 'text-brand'} whitespace-nowrap`}>
               👁️ {distractionCount}/10
             </span>
           </div>
@@ -266,35 +266,35 @@ export default function CodingChallenge() {
       {/* Workspace */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden p-2 gap-2">
         {/* Left: Description */}
-        <div className="w-full md:w-[45%] h-[40%] md:h-auto bg-[#141414] rounded-lg border border-[#262626] overflow-y-auto p-4 md:p-6 scrollbar-hide">
-          <h2 className="text-xl font-bold text-white mb-4">{problem?.title}</h2>
+        <div className="w-full md:w-[45%] h-[40%] md:h-auto bg-surface rounded-lg border border-border overflow-y-auto p-4 md:p-6 scrollbar-hide">
+          <h2 className="text-xl font-bold text-foreground mb-4">{problem?.title}</h2>
           <div className="mb-4">
             <span className={`badge-${problem?.difficulty.toLowerCase()}`}>
               {problem?.difficulty}
             </span>
           </div>
-
-          <div
-            className="text-white text-sm leading-relaxed problem-desc"
+          
+          <div 
+            className="text-foreground text-sm leading-relaxed problem-desc"
             dangerouslySetInnerHTML={{
               __html: problem?.description
-                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
-                .replace(/`([^`]+)`/g, '<code class="bg-[#0a0a0a] border border-[#262626] px-1.5 py-0.5 rounded text-[#ffa116] font-mono text-[13px]">$1</code>')
-                .replace(/```(java|js)?\n?([\s\S]*?)```/g, '<pre class="bg-[#0a0a0a] border border-[#262626] p-4 rounded-lg my-4 overflow-x-auto"><code class="text-gray-400">$2</code></pre>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground">$1</strong>')
+                .replace(/`([^`]+)`/g, '<code class="bg-background border border-border px-1.5 py-0.5 rounded text-brand font-mono text-[13px]">$1</code>')
+                .replace(/```(java|js)?\n?([\s\S]*?)```/g, '<pre class="bg-background border border-border p-4 rounded-lg my-4 overflow-x-auto"><code class="text-muted">$2</code></pre>')
                 .replace(/\n/g, '<br/>')
             }}
           />
 
-          <div className="mt-8 pt-8 border-t border-[#262626]">
+          <div className="mt-8 pt-8 border-t border-border">
             <div className="flex items-center gap-2 mb-4">
-              <input
-                type="checkbox"
-                id="custom-input-check"
-                checked={useCustomInput}
-                onChange={(e) => setUseCustomInput(e.target.checked)}
-                className="w-4 h-4 rounded border-[#262626] text-[#ffa116] focus:ring-[#ffa116] bg-[#0a0a0a]"
+              <input 
+                type="checkbox" 
+                id="custom-input-check" 
+                checked={useCustomInput} 
+                onChange={(e) => setUseCustomInput(e.target.checked)} 
+                className="w-4 h-4 rounded border-border text-brand focus:ring-brand bg-background"
               />
-              <label htmlFor="custom-input-check" className="text-sm font-medium text-white cursor-pointer">Use Custom Input</label>
+              <label htmlFor="custom-input-check" className="text-sm font-medium text-foreground cursor-pointer">Use Custom Input</label>
             </div>
 
             {useCustomInput && (
@@ -302,7 +302,7 @@ export default function CodingChallenge() {
                 value={customInput}
                 onChange={(e) => setCustomInput(e.target.value)}
                 placeholder="Enter input here (e.g. 5 10)..."
-                className="w-full h-32 bg-[#0a0a0a] border border-[#262626] rounded-lg p-3 text-sm text-white font-mono focus:outline-none focus:border-[#ffa116] mb-6"
+                className="w-full h-32 bg-background border border-border rounded-lg p-3 text-sm text-foreground font-mono focus:outline-none focus:border-brand mb-6"
               />
             )}
 
@@ -314,15 +314,15 @@ export default function CodingChallenge() {
 
         {/* Right: Editor */}
         <div className="flex-1 flex flex-col gap-2 overflow-hidden">
-          <div className="flex-1 rounded-lg border border-[#262626] overflow-hidden">
+          <div className="flex-1 rounded-lg border border-border overflow-hidden bg-background">
             <CodeEditor value={code} onChange={setCode} language="java" />
           </div>
 
           {/* Bottom Panel (optional console output) */}
           {testResults && (
-            <div className="h-[30%] bg-[#141414] rounded-lg border border-[#262626] p-4 overflow-y-auto">
-              <h3 className="text-xs font-bold text-gray-400 uppercase mb-3">Console</h3>
-              <div className="font-mono text-xs text-white space-y-1">
+            <div className="h-[30%] bg-surface rounded-lg border border-border p-4 overflow-y-auto">
+              <h3 className="text-xs font-bold text-muted uppercase mb-3">Console</h3>
+              <div className="font-mono text-xs text-foreground space-y-1">
                 {testResults.results[0]?.logs.map((log, i) => <div key={i}>{log}</div>)}
               </div>
             </div>

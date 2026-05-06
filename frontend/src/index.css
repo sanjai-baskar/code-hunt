@@ -2,17 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --color-bg-base: 255 255 255;      /* #ffffff */
+    --color-bg-surface: 243 244 246;   /* #f3f4f6 - gray-100 */
+    --color-bg-input: 255 255 255;     /* #ffffff */
+    --color-text-main: 17 24 39;       /* #111827 - gray-900 */
+    --color-text-muted: 107 114 128;   /* #6b7280 - gray-500 */
+    --color-border-main: 229 231 235;  /* #e5e7eb - gray-200 */
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-bg-base: 10 10 10;       /* #0a0a0a */
+      --color-bg-surface: 20 20 20;    /* #141414 */
+      --color-bg-input: 26 26 26;      /* #1a1a1a */
+      --color-text-main: 255 255 255;  /* #ffffff */
+      --color-text-muted: 156 163 175; /* #9ca3af - gray-400 */
+      --color-border-main: 38 38 38;   /* #262626 - neutral-800 */
+    }
+  }
+}
+
 :root {
-  --bg-dark: #0a0a0a;
-  --bg-card: #141414;
-  --bg-input: #1a1a1a;
   --leetcode-orange: #ffa116;
   --leetcode-green: #2cbb5d;
   --leetcode-red: #ef4743;
-  --text-main: #ffffff;
-  --text-muted: #9ca3af;
-  --border-main: #262626;
 }
+
 
 
 /* ── Base Reset ───────────────────────────────────────────────────── */

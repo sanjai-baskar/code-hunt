@@ -6,87 +6,110 @@ export default function Signup() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('student');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
+    setError('');
+
     try {
-      const { data } = await api.post('/auth/signup', { name, email, password });
+      const { data } = await api.post('/auth/register', { name, email, password, role });
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      navigate('/student');
+      navigate(data.user.role === 'admin' ? '/admin' : '/student');
     } catch (err) {
-      setError(err.response?.data?.error || 'Signup failed. Please try again.');
+      setError(err.response?.data?.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-dark)]">
-      <div className="w-full max-w-md p-8 bg-[var(--bg-card)] rounded-xl shadow-2xl border border-[var(--border-main)]">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 transition-colors duration-300">
+      <div className="max-w-md w-full lc-card p-8 border-border bg-surface">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#ffa116] mb-2">Code Hunt</h1>
-          <p className="text-[var(--text-muted)] text-sm">Join the community and start coding</p>
+          <h1 className="text-3xl font-black text-foreground mb-2">Code<span className="text-brand">Hunt</span></h1>
+          <p className="text-muted font-medium">Join the Arena</p>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-900/30 border border-red-500/50 rounded-lg text-sm text-red-200">
+          <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm text-center font-bold">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSignup} className="space-y-4">
+        <form onSubmit={handleSignup} className="space-y-5">
           <div>
-            <label className="block text-[var(--text-main)] text-sm font-medium mb-1">Full Name</label>
+            <label className="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Full Name</label>
             <input
               type="text"
-              required
-              className="lc-input"
-              placeholder="Enter your name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              className="w-full lc-input bg-input border-border text-foreground focus:border-brand"
+              required
+              placeholder="John Doe"
             />
           </div>
+
           <div>
-            <label className="block text-[var(--text-main)] text-sm font-medium mb-1">Email Address</label>
+            <label className="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Email Address</label>
             <input
               type="email"
-              required
-              className="lc-input"
-              placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="w-full lc-input bg-input border-border text-foreground focus:border-brand"
+              required
+              placeholder="john@example.com"
             />
           </div>
+
           <div>
-            <label className="block text-[var(--text-main)] text-sm font-medium mb-1">Password</label>
+            <label className="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Password</label>
             <input
               type="password"
-              required
-              className="lc-input"
-              placeholder="Create a password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className="w-full lc-input bg-input border-border text-foreground focus:border-brand"
+              required
+              placeholder="••••••••"
+              minLength={6}
             />
           </div>
+
+          <div>
+            <label className="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Account Type</label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full lc-input bg-input border-border text-foreground focus:border-brand appearance-none"
+            >
+              <option value="student">Student</option>
+              <option value="admin">Administrator</option>
+            </select>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#ffa116] hover:bg-[#ffb84d] text-black font-bold py-3 rounded-lg transition-colors mt-6 disabled:opacity-50"
+            className="w-full lc-btn-primary py-3.5 text-lg shadow-[0_0_20px_rgba(255,161,22,0.2)] disabled:opacity-50 mt-2"
           >
-            {loading ? 'Creating account...' : 'Create Account'}
+            {loading ? 'Creating Account...' : 'Register'}
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm">
-          <span className="text-[var(--text-muted)]">Already have an account? </span>
-          <Link to="/login" className="text-[#ffa116] hover:underline font-medium">
-            Sign In
+        <div className="mt-8 pt-8 border-t border-border flex flex-col items-center gap-4">
+          <div className="text-sm text-muted">
+            Already have an account?{' '}
+            <Link to="/login" className="text-brand hover:underline font-medium">
+              Sign In
+            </Link>
+          </div>
+          <Link to="/" className="text-[10px] text-muted hover:text-brand uppercase tracking-widest font-bold mt-2 transition-colors">
+            ← Back to Home
           </Link>
         </div>
       </div>

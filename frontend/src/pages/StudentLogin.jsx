@@ -3,93 +3,92 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/client';
 
 export default function StudentLogin() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('student@codehunt.com');
+  const [password, setPassword] = useState('student123');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
+    setError('');
+
     try {
       const { data } = await api.post('/auth/login', { email, password });
-      if (data.user.role !== 'student') {
-        setError('Please use the Admin login page.');
-        setLoading(false);
-        return;
-      }
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       navigate('/student');
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed. Please try again.');
+      setError(err.response?.data?.message || 'Login failed');
     } finally {
       setLoading(false);
     }
   };
 
-  const quickLogin = () => {
-    setEmail('student@codehunt.com');
-    setPassword('student123');
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-dark)]">
-      <div className="w-full max-w-md p-8 bg-[var(--bg-card)] rounded-xl shadow-2xl border border-[var(--border-main)]">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#ffa116] mb-2">Code Hunt</h1>
-          <p className="text-[var(--text-muted)] text-sm font-medium uppercase tracking-widest mb-1">Student Portal</p>
-          <p className="text-[var(--text-muted)] text-xs">Sign in to start your challenges</p>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 transition-colors duration-300">
+      <div className="max-w-md w-full lc-card p-8 border-border bg-surface">
+        <div className="text-center mb-10">
+          <div className="flex justify-center items-center gap-2 mb-4">
+            <span className="text-4xl">🎯</span>
+          </div>
+          <h1 className="text-3xl font-black text-foreground mb-2">Code<span className="text-brand">Hunt</span></h1>
+          <p className="text-muted font-medium">Student Arena</p>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+          <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm text-center font-bold">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label className="block text-[var(--text-main)] text-sm font-medium mb-1">Email Address</label>
+            <label className="block text-xs font-bold text-muted uppercase tracking-widest mb-2">
+              Email Address
+            </label>
             <input
               type="email"
-              required
-              className="lc-input"
-              placeholder="student@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="w-full lc-input bg-input border-border text-foreground focus:border-brand"
+              required
+              placeholder="Enter your email"
             />
           </div>
+
           <div>
-            <label className="block text-[var(--text-main)] text-sm font-medium mb-1">Password</label>
+            <label className="block text-xs font-bold text-muted uppercase tracking-widest mb-2">
+              Password
+            </label>
             <input
               type="password"
-              required
-              className="lc-input"
-              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className="w-full lc-input bg-input border-border text-foreground focus:border-brand"
+              required
+              placeholder="••••••••"
             />
           </div>
+
           <button
             type="submit"
             disabled={loading}
-            className="lc-btn-primary w-full py-3 mt-6 disabled:opacity-50"
+            className="w-full lc-btn-primary py-3.5 text-lg shadow-[0_0_20px_rgba(255,161,22,0.2)] disabled:opacity-50"
           >
-            {loading ? 'Signing in...' : 'Enter Arena'}
+            {loading ? 'Authenticating...' : 'Enter Arena'}
           </button>
         </form>
 
-        <div className="mt-6 flex flex-col items-center gap-4">
-          <div className="text-sm">
-            <span className="text-[var(--text-muted)]">Don't have an account? </span>
-            <Link to="/signup" className="text-[#ffa116] hover:underline font-medium">
+        <div className="mt-8 pt-8 border-t border-border flex flex-col items-center gap-4">
+          <div className="text-sm text-muted">
+            New to Code Hunt?{' '}
+            <Link to="/signup" className="text-brand hover:underline font-medium">
               Register Now
             </Link>
           </div>
-          <Link to="/" className="text-[10px] text-[var(--text-muted)] hover:text-[#ffa116] uppercase tracking-widest font-bold mt-2">
+          <Link to="/" className="text-[10px] text-muted hover:text-brand uppercase tracking-widest font-bold mt-2 transition-colors">
             ← Back to Home
           </Link>
         </div>

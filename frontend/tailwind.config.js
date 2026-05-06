@@ -4,6 +4,13 @@ export default {
   theme: {
     extend: {
       colors: {
+        background: 'rgb(var(--color-bg-base) / <alpha-value>)',
+        surface: 'rgb(var(--color-bg-surface) / <alpha-value>)',
+        input: 'rgb(var(--color-bg-input) / <alpha-value>)',
+        foreground: 'rgb(var(--color-text-main) / <alpha-value>)',
+        muted: 'rgb(var(--color-text-muted) / <alpha-value>)',
+        border: 'rgb(var(--color-border-main) / <alpha-value>)',
+        brand: '#ffa116',
         space: {
           900: '#0B0C10',
           800: '#0d0f14',

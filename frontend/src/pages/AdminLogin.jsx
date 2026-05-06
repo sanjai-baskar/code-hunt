@@ -3,88 +3,90 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/client';
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@codehunt.com');
+  const [password, setPassword] = useState('admin123');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
+    setError('');
+
     try {
       const { data } = await api.post('/auth/login', { email, password });
-      if (data.user.role !== 'admin') {
-        setError('Unauthorized. This portal is for Administrators only.');
-        setLoading(false);
-        return;
-      }
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       navigate('/admin');
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed. Please try again.');
+      setError(err.response?.data?.message || 'Login failed');
     } finally {
       setLoading(false);
     }
   };
 
-  const quickLogin = () => {
-    setEmail('admin@codehunt.com');
-    setPassword('admin123');
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-dark)]">
-      <div className="w-full max-w-md p-8 bg-[var(--bg-card)] rounded-xl shadow-2xl border-2 border-[var(--border-main)]">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-black text-[var(--text-main)] mb-2">Admin<span className="text-[#ffa116]">Hub</span></h1>
-          <p className="text-[var(--text-muted)] text-sm font-bold uppercase tracking-tighter mb-1">Command Center</p>
-          <p className="text-[var(--text-muted)] text-xs">Secure access for platform moderators</p>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 transition-colors duration-300">
+      <div className="max-w-md w-full lc-card p-8 border-border bg-surface relative overflow-hidden">
+        {/* Decorative Top Border */}
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500" />
+        
+        <div className="text-center mb-10 mt-2">
+          <div className="flex justify-center items-center gap-2 mb-4">
+            <span className="text-4xl">🛡️</span>
+          </div>
+          <h1 className="text-3xl font-black text-foreground mb-2">Code<span className="text-brand">Hunt</span></h1>
+          <p className="text-muted font-medium uppercase tracking-widest text-xs">Admin Portal</p>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600 font-medium">
+          <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm text-center font-bold">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label className="block text-[var(--text-main)] text-sm font-semibold mb-1">Admin Email</label>
+            <label className="block text-xs font-bold text-muted uppercase tracking-widest mb-2">
+              Admin Email
+            </label>
             <input
               type="email"
-              required
-              className="lc-input border-2 focus:border-[var(--text-main)]"
-              placeholder="admin@codehunt.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="w-full lc-input bg-input border-border text-foreground focus:border-brand"
+              required
+              placeholder="admin@codehunt.com"
             />
           </div>
+
           <div>
-            <label className="block text-[var(--text-main)] text-sm font-semibold mb-1">Security Key</label>
+            <label className="block text-xs font-bold text-muted uppercase tracking-widest mb-2">
+              Password
+            </label>
             <input
               type="password"
-              required
-              className="lc-input border-2 focus:border-[var(--text-main)]"
-              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className="w-full lc-input bg-input border-border text-foreground focus:border-brand"
+              required
+              placeholder="••••••••"
             />
           </div>
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 mt-6 bg-[var(--text-main)] text-white font-black rounded-lg hover:bg-black transition-all disabled:opacity-50 uppercase tracking-widest text-sm"
+            className="w-full py-3.5 text-lg font-bold rounded bg-foreground text-background hover:opacity-90 transition-opacity disabled:opacity-50 mt-4"
           >
-            {loading ? 'Authenticating...' : 'Authorize Access'}
+            {loading ? 'Authenticating...' : 'Access Dashboard'}
           </button>
         </form>
 
         <div className="mt-8 flex flex-col items-center gap-4">
-          <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-bold">Authorized Personnel Only</p>
-          <Link to="/" className="text-[10px] text-[var(--text-muted)] hover:text-[#ffa116] uppercase tracking-widest font-bold mt-2">
+          <p className="text-[10px] text-muted uppercase tracking-widest font-bold">Authorized Personnel Only</p>
+          <Link to="/" className="text-[10px] text-muted hover:text-brand uppercase tracking-widest font-bold mt-2 transition-colors">
             ← Back to Home
           </Link>
         </div>
