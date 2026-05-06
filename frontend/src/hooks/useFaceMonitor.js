@@ -77,9 +77,9 @@ export function useFaceMonitor({ onDistraction, getCode, problemId }) {
         return;
       }
 
-      // Sustained distraction rule (3 seconds as per the user's toast logic in snippet)
+      // Sustained distraction rule: 5 seconds of sustained distraction triggers an event
       const elapsed = now - distractionStart.current;
-      if (elapsed >= 3000) {
+      if (elapsed >= 5000) {
         const startTime = new Date(distractionStart.current).toISOString();
         const endTime   = new Date(now).toISOString();
         const snapshot  = getCode ? getCode() : '';

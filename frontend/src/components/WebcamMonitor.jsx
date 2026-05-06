@@ -26,6 +26,7 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
         } catch (e) {
           await tf.setBackend('cpu');
         }
+        await tf.ready(); // Ensure backend is fully initialized before loading model
 
         const model = await cocoSsd.load();
         setObjectModel(model);
@@ -94,21 +95,28 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
     };
   }, [modelsLoaded, processDetection]);
 
-  // Object Detection Loop
+  // Object Detection Loop — 500ms interval for fast detection
   useEffect(() => {
     if (!streamActive || !objectModel) return;
 
     let timeoutId;
     const runDetection = async () => {
-      if (videoRef.current && videoRef.current.readyState === 4) {
+      // readyState >= 2 means video has enough data (HAVE_CURRENT_DATA or better)
+      if (videoRef.current && videoRef.current.readyState >= 2) {
         try {
           const predictions = await objectModel.detect(videoRef.current);
           predictionsRef.current = predictions;
+
+          // Debug log to verify detection is running
+          const found = predictions.filter(p => p.score > 0.4);
+          if (found.length > 0) {
+            console.log('[COCO-SSD]', found.map(p => `${p.class} ${Math.round(p.score * 100)}%`).join(', '));
+          }
         } catch (err) {
           console.error("Object detection error:", err);
         }
       }
-      timeoutId = setTimeout(runDetection, 1500);
+      timeoutId = setTimeout(runDetection, 500);
     };
 
     runDetection();
