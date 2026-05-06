@@ -40,10 +40,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ─── Start ────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`🚀 Code Hunt API running at http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production' || process.env.LOCAL_DEV === 'true') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Code Hunt API running at http://localhost:${PORT}`);
+  });
+}
 
 
 module.exports = app;
