@@ -17,19 +17,19 @@ app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
-app.use('/api/auth', authRoutes);
-app.use('/api/problems', problemRoutes);
-app.use('/api/run', runRoutes);
-app.use('/api/submit', submitRoutes);
-app.use('/api/logs', logRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/auth', authRoutes);
+app.use('/problems', problemRoutes);
+app.use('/run', runRoutes);
+app.use('/submit', submitRoutes);
+app.use('/logs', logRoutes);
+app.use('/admin', adminRoutes);
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.get('/api/diag', async (req, res) => {
+app.get('/diag', async (req, res) => {
   res.json({
     hasDbUrl: !!process.env.DATABASE_URL,
     dbUrlPrefix: process.env.DATABASE_URL ? process.env.DATABASE_URL.split(':')[0] : 'none',
