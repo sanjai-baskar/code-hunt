@@ -32,6 +32,14 @@ export default function CodingChallenge() {
 
   useEffect(() => { codeRef.current = code; }, [code]);
 
+  // ==========  addToast MUST be defined before any useEffect that uses it ==========
+  const addToast = useCallback((message, type = 'default') => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 5000);
+  }, []);
+
+  // fetch problem data
   useEffect(() => {
     api.get(`/problems/${id}`)
       .then(({ data }) => {
@@ -42,6 +50,7 @@ export default function CodingChallenge() {
       .finally(() => setLoading(false));
   }, [id, navigate]);
 
+  // fullscreen / multi‑tab detection
   useEffect(() => {
     if (!hasStarted) return;
 
@@ -71,13 +80,13 @@ export default function CodingChallenge() {
     };
   }, [hasStarted, id, isDisqualified]);
 
+  // copy/paste/right‑click security – now addToast exists
   useEffect(() => {
     if (!hasStarted || isDisqualified) return;
 
     const handleSecurityViolation = (e) => {
       e.preventDefault();
 
-      // Count as a distraction
       setDistractionCount(prev => prev + 1);
       addToast("⚠️ Security Violation: Unauthorized action detected!", "error");
 
@@ -91,7 +100,6 @@ export default function CodingChallenge() {
         codeSnapshot: codeRef.current
       }).catch(() => { });
 
-      // Terminate session after a short delay
       setTimeout(() => {
         alert("SECURITY VIOLATION: Copy, Paste, and Right-click are strictly prohibited. Your session has been terminated and this incident has been logged.");
         localStorage.clear();
@@ -110,8 +118,6 @@ export default function CodingChallenge() {
     };
   }, [hasStarted, id, isDisqualified, addToast]);
 
-
-
   const startChallenge = () => {
     if (document.documentElement.requestFullscreen) {
       document.documentElement.requestFullscreen().catch(() => { });
@@ -119,12 +125,6 @@ export default function CodingChallenge() {
     setHasStarted(true);
     start();
   };
-
-  const addToast = useCallback((message, type = 'default') => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 5000);
-  }, []);
 
   const handleDistraction = useCallback((direction) => {
     // Only terminate on real hardware failure (camera physically unavailable)
@@ -143,8 +143,7 @@ export default function CodingChallenge() {
       return;
     }
 
-    // All other distractions (away, looking left/right/up, objects, multiple faces)
-    // are counted and logged — NOT an immediate disqualification
+    // All other distractions are counted and logged – NOT an immediate disqualification
     setDistractionCount((prev) => {
       const next = prev + 1;
       let label;
