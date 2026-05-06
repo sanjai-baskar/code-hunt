@@ -160,7 +160,9 @@ export default function AdminDashboard() {
               {students.map((s) => (
                 <div key={s.id} className="lc-card p-5 flex items-center justify-between">
                   <div>
-                    <p className="text-[var(--text-main)] font-medium">{s.name}</p>
+                    <p className="text-[var(--text-main)] font-medium">
+                      {s.name} {s.hasPassed && <span title="Passed all test cases" className="ml-1 text-[#ffa116]">❓</span>}
+                    </p>
                     <p className="text-sm text-[var(--text-muted)]">{s.email}</p>
                     <div className="flex gap-4 mt-1">
                       <span className="text-xs text-[#ffa116]">{s._count?.submissions || 0} submissions</span>

@@ -7,6 +7,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import CodingChallenge from './pages/CodingChallenge';
 import Signup from './pages/Signup';
 
+import Home from './pages/Home';
+
 // ── Auth guard ──────────────────────────────────────────────────────
 function PrivateRoute({ children, requiredRole }) {
   const token = localStorage.getItem('token');
@@ -30,6 +32,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Home />} />
         <Route path="/login" element={<StudentLogin />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/signup" element={<Signup />} />
@@ -59,17 +62,10 @@ export default function App() {
           }
         />
 
-        {/* Default redirect */}
-        <Route
-          path="/"
-          element={
-            user
-              ? <Navigate to={user.role === 'admin' ? '/admin' : '/student'} replace />
-              : <Navigate to="/login" replace />
-          }
-        />
+        {/* Default redirect for unknown paths */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
 }
+

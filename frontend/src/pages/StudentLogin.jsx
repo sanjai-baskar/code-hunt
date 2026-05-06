@@ -89,15 +89,6 @@ export default function StudentLogin() {
               Register Now
             </Link>
           </div>
-          
-          <div className="flex flex-col gap-2 w-full pt-4 border-t border-[var(--border-main)]">
-            <button onClick={quickLogin} className="lc-btn-secondary text-xs py-2">
-              Demo Student Login
-            </button>
-            <Link to="/admin/login" className="text-center text-[10px] text-[var(--text-muted)] hover:text-[var(--text-main)] uppercase tracking-widest mt-2">
-              Admin Login →
-            </Link>
-          </div>
         </div>
       </div>
     </div>

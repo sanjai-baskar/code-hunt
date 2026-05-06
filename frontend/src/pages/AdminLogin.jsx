@@ -83,14 +83,7 @@ export default function AdminLogin() {
         </form>
 
         <div className="mt-8 flex flex-col items-center gap-4">
-          <div className="flex flex-col gap-3 w-full pt-6 border-t border-[var(--border-main)]">
-            <button onClick={quickLogin} className="lc-btn-secondary text-xs py-2 font-bold">
-              Emergency Demo Admin Login
-            </button>
-            <Link to="/login" className="text-center text-[10px] text-[var(--text-muted)] hover:text-[#ffa116] uppercase tracking-widest mt-2 font-bold">
-              ← Back to Student Portal
-            </Link>
-          </div>
+          <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-bold">Authorized Personnel Only</p>
         </div>
       </div>
     </div>

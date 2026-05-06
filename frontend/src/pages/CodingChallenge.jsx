@@ -71,6 +71,38 @@ export default function CodingChallenge() {
     };
   }, [hasStarted, id, isDisqualified]);
 
+  useEffect(() => {
+    if (!hasStarted || isDisqualified) return;
+    
+    const handleSecurityViolation = (e) => {
+      e.preventDefault();
+      setIsDisqualified(true);
+      
+      api.post('/logs', { 
+        problemId: id, 
+        direction: 'SECURITY_clipboard_violation', 
+        startTime: new Date().toISOString(), 
+        endTime: new Date().toISOString(), 
+        codeSnapshot: codeRef.current 
+      }).catch(() => {});
+      
+      alert("SECURITY VIOLATION: Clipboard actions (Copy/Paste) and right-click are prohibited. Your session has been terminated.");
+      localStorage.clear();
+      window.location.href = '/login';
+    };
+
+    document.addEventListener('copy', handleSecurityViolation);
+    document.addEventListener('paste', handleSecurityViolation);
+    document.addEventListener('contextmenu', handleSecurityViolation);
+    
+    return () => {
+      document.removeEventListener('copy', handleSecurityViolation);
+      document.removeEventListener('paste', handleSecurityViolation);
+      document.removeEventListener('contextmenu', handleSecurityViolation);
+    };
+  }, [hasStarted, id, isDisqualified]);
+
+
   const startChallenge = () => {
     if (document.documentElement.requestFullscreen) {
       document.documentElement.requestFullscreen().catch(() => {});

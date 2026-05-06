@@ -10,16 +10,24 @@ router.get('/students', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const students = await prisma.user.findMany({
       where: { role: 'student' },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        createdAt: true,
+      include: {
         _count: { select: { submissions: true, distractionLogs: true } },
+        submissions: {
+          where: { passedTestCases: true },
+          select: { id: true },
+          take: 1
+        }
       },
       orderBy: { createdAt: 'desc' },
     });
-    res.json(students);
+    
+    const studentsWithPassFlag = students.map(s => ({
+      ...s,
+      hasPassed: s.submissions.length > 0
+    }));
+
+    res.json(studentsWithPassFlag);
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
