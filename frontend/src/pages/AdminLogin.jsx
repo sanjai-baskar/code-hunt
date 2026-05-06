@@ -84,7 +84,11 @@ export default function AdminLogin() {
 
         <div className="mt-8 flex flex-col items-center gap-4">
           <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-bold">Authorized Personnel Only</p>
+          <Link to="/" className="text-[10px] text-[var(--text-muted)] hover:text-[#ffa116] uppercase tracking-widest font-bold mt-2">
+            ← Back to Home
+          </Link>
         </div>
+
       </div>
     </div>
   );

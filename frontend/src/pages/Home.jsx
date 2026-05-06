@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[var(--bg-dark)] text-[var(--text-main)] overflow-hidden">
+    <div className="min-h-screen bg-[var(--bg-dark)] text-[var(--text-main)]">
       {/* Hero Section */}
       <nav className="lc-navbar justify-between border-none bg-transparent pt-4">
         <div className="flex items-center gap-2">

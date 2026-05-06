@@ -76,19 +76,27 @@ export default function CodingChallenge() {
     
     const handleSecurityViolation = (e) => {
       e.preventDefault();
+      
+      // Count as a distraction
+      setDistractionCount(prev => prev + 1);
+      addToast("⚠️ Security Violation: Unauthorized action detected!", "error");
+
       setIsDisqualified(true);
       
       api.post('/logs', { 
         problemId: id, 
-        direction: 'SECURITY_clipboard_violation', 
+        direction: 'SECURITY_VIOLATION_UNAUTHORIZED_INPUT', 
         startTime: new Date().toISOString(), 
         endTime: new Date().toISOString(), 
         codeSnapshot: codeRef.current 
       }).catch(() => {});
       
-      alert("SECURITY VIOLATION: Clipboard actions (Copy/Paste) and right-click are prohibited. Your session has been terminated.");
-      localStorage.clear();
-      window.location.href = '/login';
+      // Terminate session after a short delay
+      setTimeout(() => {
+        alert("SECURITY VIOLATION: Copy, Paste, and Right-click are strictly prohibited. Your session has been terminated and this incident has been logged.");
+        localStorage.clear();
+        window.location.href = '/';
+      }, 1000);
     };
 
     document.addEventListener('copy', handleSecurityViolation);
@@ -100,7 +108,8 @@ export default function CodingChallenge() {
       document.removeEventListener('paste', handleSecurityViolation);
       document.removeEventListener('contextmenu', handleSecurityViolation);
     };
-  }, [hasStarted, id, isDisqualified]);
+  }, [hasStarted, id, isDisqualified, addToast]);
+
 
 
   const startChallenge = () => {

@@ -89,7 +89,11 @@ export default function StudentLogin() {
               Register Now
             </Link>
           </div>
+          <Link to="/" className="text-[10px] text-[var(--text-muted)] hover:text-[#ffa116] uppercase tracking-widest font-bold mt-2">
+            ← Back to Home
+          </Link>
         </div>
+
       </div>
     </div>
   );

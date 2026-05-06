@@ -3,16 +3,17 @@
 @tailwind utilities;
 
 :root {
-  --bg-dark: #ffffff;
-  --bg-card: #f8f9fa;
-  --bg-input: #ffffff;
+  --bg-dark: #0a0a0a;
+  --bg-card: #141414;
+  --bg-input: #1a1a1a;
   --leetcode-orange: #ffa116;
   --leetcode-green: #2cbb5d;
   --leetcode-red: #ef4743;
-  --text-main: #262626;
-  --text-muted: #8c8c8c;
-  --border-main: #e5e7eb;
+  --text-main: #ffffff;
+  --text-muted: #9ca3af;
+  --border-main: #262626;
 }
+
 
 /* ── Base Reset ───────────────────────────────────────────────────── */
 * { box-sizing: border-box; margin: 0; padding: 0; }
