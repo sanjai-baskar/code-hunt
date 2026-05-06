@@ -130,7 +130,17 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
             
             if (pyRes.ok) {
               const data = await pyRes.json();
-              if (data.direction !== 'center') direction = data.direction;
+              
+              // Map the new strict JSON to our internal direction variable
+              if (data.status !== 'normal') {
+                // If there are specific violations like 'talking' or 'multiple_faces', 
+                // we can prioritize them.
+                if (data.violations.includes('multiple_faces')) direction = 'multiple-faces';
+                else if (data.violations.includes('talking')) direction = 'talking';
+                else if (data.violations.includes('looking_away')) direction = data.gaze_direction;
+                else if (data.violations.includes('head_pose_suspicious')) direction = 'suspicious-pose';
+                else if (data.gaze_direction !== 'center') direction = data.gaze_direction;
+              }
             } else {
               throw new Error('Python API down');
             }

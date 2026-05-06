@@ -108,6 +108,8 @@ export default function CodingChallenge() {
       const next = prev + 1;
       let label;
       if (direction === 'away') label = 'Face not detected';
+      else if (direction === 'talking') label = 'Voice/Talking detected';
+      else if (direction === 'suspicious-pose') label = 'Suspicious head movement';
       else if (direction.startsWith('object-')) label = `Forbidden object: ${direction.replace('object-', '').replace('-', ' ')}`;
       else if (direction === 'multiple-faces') label = 'Multiple faces detected!';
       else label = `Looking ${direction}`;
