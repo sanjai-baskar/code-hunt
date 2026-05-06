@@ -1,0 +1,44 @@
+const express = require('express');
+const router = express.Router();
+const { PrismaClient } = require('@prisma/client');
+const { authenticateToken } = require('../middleware/auth');
+const { runCode } = require('../utils/executor');
+
+const prisma = new PrismaClient();
+
+// POST /api/run — execute code against all test cases (no DB write)
+router.post('/', authenticateToken, async (req, res) => {
+  try {
+    const { code, problemId, customInput } = req.body;
+
+    if (!code || !problemId) {
+      return res.status(400).json({ error: 'code and problemId are required' });
+    }
+
+    const problem = await prisma.problem.findUnique({ where: { id: problemId } });
+    if (!problem) return res.status(404).json({ error: 'Problem not found' });
+
+    let testCases;
+    if (customInput !== undefined && customInput !== null) {
+      // Use custom input
+      testCases = [{ input: customInput, output: '' }];
+    } else {
+      // Use predefined test cases
+      testCases = JSON.parse(problem.testCases);
+    }
+    
+    const results = await runCode(code, testCases, problem.functionName);
+    const passedCount = results.filter((r) => r.passed).length;
+
+    res.json({
+      results,
+      allPassed: passedCount === testCases.length,
+      summary: `${passedCount}/${testCases.length} test cases passed`,
+    });
+  } catch (err) {
+    console.error('Run error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+module.exports = router;

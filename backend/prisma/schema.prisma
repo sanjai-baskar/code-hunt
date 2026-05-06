@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String           @id @default(cuid())
+  email           String           @unique
+  password        String
+  name            String
+  role            String           @default("student")
+  createdAt       DateTime         @default(now())
+  submissions     Submission[]
+  distractionLogs DistractionLog[]
+}
+
+model Problem {
+  id              String           @id @default(cuid())
+  title           String
+  description     String
+  difficulty      String           @default("Easy")
+  testCases       String
+  functionName    String           @default("solution")
+  starterCode     String           @default("")
+  createdAt       DateTime         @default(now())
+  submissions     Submission[]
+  distractionLogs DistractionLog[]
+}
+
+model Submission {
+  id               String   @id @default(cuid())
+  studentId        String
+  problemId        String
+  code             String
+  output           String
+  passedTestCases  Boolean  @default(false)
+  distractionCount Int      @default(0)
+  timestamp        DateTime @default(now())
+  student          User     @relation(fields: [studentId], references: [id])
+  problem          Problem  @relation(fields: [problemId], references: [id])
+}
+
+model DistractionLog {
+  id           String   @id @default(cuid())
+  studentId    String
+  problemId    String
+  direction    String
+  startTime    DateTime
+  endTime      DateTime
+  codeSnapshot String
+  createdAt    DateTime @default(now())
+  student      User     @relation(fields: [studentId], references: [id])
+  problem      Problem  @relation(fields: [problemId], references: [id])
+}

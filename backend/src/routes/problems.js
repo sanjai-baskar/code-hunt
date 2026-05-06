@@ -1,0 +1,90 @@
+const express = require('express');
+const router = express.Router();
+const { PrismaClient } = require('@prisma/client');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
+
+const prisma = new PrismaClient();
+
+// GET /api/problems — list all problems (student + admin)
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const problems = await prisma.problem.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    const parsed = problems.map((p) => ({
+      ...p,
+      testCases: JSON.parse(p.testCases),
+    }));
+    res.json(parsed);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/problems/:id — single problem
+router.get('/:id', authenticateToken, async (req, res) => {
+  try {
+    const problem = await prisma.problem.findUnique({ where: { id: req.params.id } });
+    if (!problem) return res.status(404).json({ error: 'Problem not found' });
+    res.json({ ...problem, testCases: JSON.parse(problem.testCases) });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/problems — create (admin only)
+router.post('/', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { title, description, difficulty, testCases, functionName } = req.body;
+    if (!title || !description || !testCases || !Array.isArray(testCases)) {
+      return res.status(400).json({ error: 'title, description, testCases[] required' });
+    }
+    const problem = await prisma.problem.create({
+      data: {
+        title,
+        description,
+        difficulty: difficulty || 'Easy',
+        testCases: JSON.stringify(testCases),
+        functionName: functionName || 'solution',
+      },
+    });
+    res.status(201).json({ ...problem, testCases: JSON.parse(problem.testCases) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/problems/:id — update (admin only)
+router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { title, description, difficulty, testCases, functionName } = req.body;
+    const data = {};
+    if (title) data.title = title;
+    if (description) data.description = description;
+    if (difficulty) data.difficulty = difficulty;
+    if (testCases) data.testCases = JSON.stringify(testCases);
+    if (functionName) data.functionName = functionName;
+
+    const problem = await prisma.problem.update({ where: { id: req.params.id }, data });
+    res.json({ ...problem, testCases: JSON.parse(problem.testCases) });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/problems/:id — delete (admin only)
+router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    await prisma.distractionLog.deleteMany({ where: { problemId: req.params.id } });
+    await prisma.submission.deleteMany({ where: { problemId: req.params.id } });
+    await prisma.problem.delete({ where: { id: req.params.id } });
+    res.json({ message: 'Problem deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+module.exports = router;
