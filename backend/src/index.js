@@ -17,19 +17,19 @@ app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
-app.use('/auth', authRoutes);
-app.use('/problems', problemRoutes);
-app.use('/run', runRoutes);
-app.use('/submit', submitRoutes);
-app.use('/logs', logRoutes);
-app.use('/admin', adminRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/problems', problemRoutes);
+app.use('/api/run', runRoutes);
+app.use('/api/submit', submitRoutes);
+app.use('/api/logs', logRoutes);
+app.use('/api/admin', adminRoutes);
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.get('/diag', async (req, res) => {
+app.get('/api/diag', async (req, res) => {
   let dbStatus = 'testing';
   try {
     const { PrismaClient } = require('@prisma/client');
