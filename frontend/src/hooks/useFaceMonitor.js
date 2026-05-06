@@ -10,6 +10,9 @@ export function useFaceMonitor({ onDistraction, getCode, problemId }) {
   const distractionStart = useRef(null);
   const currentDir = useRef(null);
   const timerActive = useRef(false);
+  // Grace period: ignore distractions for 10s while MediaPipe initializes
+  const startTimeRef = useRef(Date.now());
+  const GRACE_PERIOD_MS = 10000;
 
   /**
    * processDetection – called from the MediaPipe faceMesh.onResults loop.
@@ -18,6 +21,9 @@ export function useFaceMonitor({ onDistraction, getCode, problemId }) {
    */
   const processDetection = useCallback(
     (results, objects = []) => {
+      // Skip all monitoring during grace period (MediaPipe loading)
+      if (Date.now() - startTimeRef.current < GRACE_PERIOD_MS) return;
+
       let direction = null;
 
       // 1. Check for forbidden objects (cell phone, laptop, etc.)

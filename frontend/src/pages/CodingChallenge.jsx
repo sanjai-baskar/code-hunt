@@ -86,29 +86,31 @@ export default function CodingChallenge() {
   }, []);
 
   const handleDistraction = useCallback((direction) => {
-    if (direction === 'away' || direction === 'camera-off') {
+    // Only terminate on real hardware failure (camera physically unavailable)
+    if (direction === 'camera-off') {
       setIsDisqualified(true);
       api.post('/logs', { 
         problemId: id, 
-        direction: `CRITICAL_${direction}`, 
+        direction: 'CRITICAL_camera-off', 
         startTime: new Date().toISOString(), 
         endTime: new Date().toISOString(), 
         codeSnapshot: codeRef.current 
       }).catch(() => {});
-      
-      alert("CRITICAL SECURITY VIOLATION: Video stream interrupted or face not detected. Your session has been terminated.");
+      alert('Camera access was lost. Your session has been terminated.');
       localStorage.clear();
       window.location.href = '/login';
       return;
     }
 
+    // All other distractions (away, looking left/right/up, objects, multiple faces)
+    // are counted and logged — NOT an immediate disqualification
     setDistractionCount((prev) => {
       const next = prev + 1;
-      const label = direction.startsWith('object-')
-        ? `Forbidden object: ${direction.replace('object-', '').replace('-', ' ')}`
-        : direction === 'multiple-faces'
-          ? 'Multiple faces detected!'
-          : `Looking ${direction}`;
+      let label;
+      if (direction === 'away') label = 'Face not detected';
+      else if (direction.startsWith('object-')) label = `Forbidden object: ${direction.replace('object-', '').replace('-', ' ')}`;
+      else if (direction === 'multiple-faces') label = 'Multiple faces detected!';
+      else label = `Looking ${direction}`;
       addToast(`⚠️ ${label}`, 'warn');
       if (next >= 10) {
         setShowBanner(true);

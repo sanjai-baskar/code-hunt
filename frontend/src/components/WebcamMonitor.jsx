@@ -55,9 +55,10 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
       } catch { /* silent */ }
     };
 
-    // Kick off first detection once, then repeat every 1000ms
+    // Kick off first detection once, then repeat every 2000ms
+    // 2s interval reduces CPU contention with MediaPipe face mesh
     runDetection();
-    detLoopRef.current = setInterval(runDetection, 1000);
+    detLoopRef.current = setInterval(runDetection, 2000);
 
     return () => {
       clearInterval(detLoopRef.current);
@@ -160,8 +161,9 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
         setStreamActive(true);
       } catch (err) {
         console.error('[AI] MediaPipe setup failed:', err);
-        setError('Camera failed to start');
-        if (onDistraction) onDistraction('camera-off');
+        setError('Camera failed to start. Please refresh.');
+        // Don't trigger camera-off here — transient MediaPipe errors
+        // should not immediately terminate the student's session.
       }
     })();
 
