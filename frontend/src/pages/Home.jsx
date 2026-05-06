@@ -10,10 +10,12 @@ export default function Home() {
           <span className="text-2xl">🎯</span>
           <span className="text-xl font-bold">Code<span className="text-[#ffa116]">Hunt</span></span>
         </div>
-        <div className="flex gap-4">
-          <Link to="/login" className="text-sm font-medium hover:text-[#ffa116] transition-colors">Login</Link>
+        <div className="flex gap-6 items-center">
+          <Link to="/login" className="text-sm font-bold hover:text-[#ffa116] transition-colors">Student Login</Link>
+          <Link to="/admin/login" className="text-sm font-bold hover:text-[#ffa116] transition-colors">Admin Access</Link>
           <Link to="/signup" className="lc-btn-primary !py-1.5 !px-4 text-sm">Join Now</Link>
         </div>
+
       </nav>
 
       <main className="max-w-7xl mx-auto px-6 pt-20 pb-32">
@@ -27,13 +29,14 @@ export default function Home() {
               With real-time gaze monitoring, object detection, and behavioral analysis, we protect the value of your skills.
             </p>
             <div className="flex flex-wrap gap-4">
-              <Link to="/signup" className="lc-btn-primary !py-4 !px-8 text-lg shadow-[0_10px_20px_rgba(255,161,22,0.3)]">
-                Get Started for Free
+              <Link to="/login" className="lc-btn-primary !py-4 !px-8 text-lg shadow-[0_10px_20px_rgba(255,161,22,0.3)]">
+                Student Arena
               </Link>
-              <Link to="/login" className="lc-btn-secondary !py-4 !px-8 text-lg">
-                Student Access
+              <Link to="/admin/login" className="lc-btn-secondary !py-4 !px-8 text-lg font-bold border-2 border-[var(--text-main)]">
+                Admin Portal
               </Link>
             </div>
+
             
             <div className="mt-12 flex items-center gap-6">
               <div className="flex -space-x-3">
