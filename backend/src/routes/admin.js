@@ -55,7 +55,7 @@ router.get('/students', authenticateToken, requireAdmin, async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: err.message });
   }
 });
 
@@ -105,7 +105,7 @@ router.get('/student/:id', authenticateToken, requireAdmin, async (req, res) => 
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: err.message });
   }
 });
 
@@ -119,7 +119,8 @@ router.get('/settings', authenticateToken, requireAdmin, async (req, res) => {
     });
     res.json(settings);
   } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Settings GET error:', err);
+    res.status(500).json({ error: 'Internal server error', details: err.message });
   }
 });
 
@@ -139,7 +140,8 @@ router.post('/settings/webcam', authenticateToken, requireAdmin, async (req, res
 
     res.json(settings);
   } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Settings POST error:', err);
+    res.status(500).json({ error: 'Internal server error', details: err.message });
   }
 });
 
