@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ export default function StudentDashboard() {
   }, []);
 
   if (loading) return (
-    <div className="h-screen bg-background flex items-center justify-center">
+    <div className="h-screen bg-background flex items-center justify-center transition-colors duration-300">
       <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
@@ -41,6 +42,7 @@ export default function StudentDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <div className="text-right hidden sm:block">
               <p className="text-xs font-bold text-foreground">{user.name}</p>
               <p className="text-[10px] text-muted">{user.email}</p>

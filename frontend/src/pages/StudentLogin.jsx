@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/client';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function StudentLogin() {
   const [email, setEmail] = useState('student@codehunt.com');
@@ -29,7 +30,10 @@ export default function StudentLogin() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 transition-colors duration-300">
       <div className="max-w-md w-full lc-card p-8 border-border bg-surface">
-        <div className="text-center mb-10">
+        <div className="text-center mb-10 relative">
+          <div className="absolute top-0 right-0">
+            <ThemeToggle />
+          </div>
           <div className="flex justify-center items-center gap-2 mb-4">
             <span className="text-4xl">🎯</span>
           </div>

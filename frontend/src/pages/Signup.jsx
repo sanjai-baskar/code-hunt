@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/client';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function Signup() {
   const [name, setName] = useState('');
@@ -31,7 +32,10 @@ export default function Signup() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 transition-colors duration-300">
       <div className="max-w-md w-full lc-card p-8 border-border bg-surface">
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 relative">
+          <div className="absolute top-0 right-0">
+            <ThemeToggle />
+          </div>
           <h1 className="text-3xl font-black text-foreground mb-2">Code<span className="text-brand">Hunt</span></h1>
           <p className="text-muted font-medium">Join the Arena</p>
         </div>

@@ -67,29 +67,29 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
       onMouseDown={handleMouseDown}
     >
       <div className="webcam-inner">
-        <div className="webcam-header flex justify-between px-2 py-1 bg-gray-800 text-white text-[10px]">
+        <div className="webcam-header">
           <div className="flex items-center gap-1.5">
             <div className={`w-2 h-2 rounded-full ${streamReady ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
             <span className="font-medium">
               {lastEvent ? (
-                <span className="text-red-400">⚠️ {lastEvent.toUpperCase()}</span>
+                <span className="text-red-500">⚠️ {lastEvent.toUpperCase()}</span>
               ) : (
                 <span>AI: {status}</span>
               )}
             </span>
           </div>
         </div>
-        <div className="relative aspect-video bg-black overflow-hidden rounded-b">
+        <div className="relative aspect-video bg-black/20 overflow-hidden rounded-b">
           {camError && (
-            <div className="absolute inset-0 flex items-center justify-center text-[10px] text-red-400 p-2 text-center bg-black/90 z-20">
+            <div className="absolute inset-0 flex items-center justify-center text-[10px] text-red-500 p-2 text-center bg-background/90 z-20">
               ⚠️ {camError}
             </div>
           )}
           <video ref={videoRef} muted playsInline className="absolute inset-0 w-full h-full object-cover scale-x-[-1]" />
           <canvas ref={canvasRef} width="320" height="240" className="absolute inset-0 w-full h-full scale-x-[-1] z-10 pointer-events-none" />
           {!streamReady && !camError && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-20">
-              <div className="w-5 h-5 border-2 border-[#ffa116] border-t-transparent rounded-full animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center bg-background/70 z-20">
+              <div className="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin" />
             </div>
           )}
         </div>

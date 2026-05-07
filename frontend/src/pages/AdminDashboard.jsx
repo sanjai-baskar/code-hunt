@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
+import ThemeToggle from '../components/ThemeToggle';
 import AdminProblemForm from '../components/AdminProblemForm';
 import StudentLogsModal from '../components/StudentLogsModal';
 
@@ -44,10 +45,16 @@ export default function AdminDashboard() {
   const logout = () => { localStorage.clear(); navigate('/login'); };
 
   const DIFF_COLORS = {
-    Easy:   { bg: 'rgba(34,197,94,0.12)',  color: '#22c55e' },
+    Easy: { bg: 'rgba(34,197,94,0.12)', color: '#22c55e' },
     Medium: { bg: 'rgba(251,191,36,0.12)', color: '#fbbf24' },
-    Hard:   { bg: 'rgba(239,68,68,0.12)',  color: '#ef4444' },
+    Hard: { bg: 'rgba(239,68,68,0.12)', color: '#ef4444' },
   };
+
+  if (loading) return (
+    <div className="h-screen bg-background flex items-center justify-center transition-colors duration-300">
+      <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
@@ -55,13 +62,14 @@ export default function AdminDashboard() {
       <nav className="sticky top-0 z-50 bg-surface/90 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">🎯</span>
+            <span className="text-2xl"></span>
             <span className="text-xl font-bold text-foreground">Code<span className="text-brand">Hunt</span></span>
             <span className="ml-2 text-xs px-2.5 py-1 rounded-full font-medium bg-brand/10 text-brand border border-brand/20">
               Admin
             </span>
           </div>
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <span className="text-sm text-foreground">{user.name}</span>
             <button id="admin-logout" onClick={logout}
               className="px-4 py-2 rounded-lg text-sm transition-all bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20">
@@ -99,11 +107,10 @@ export default function AdminDashboard() {
         <div className="flex gap-2 mb-6">
           {['problems', 'students'].map((tab) => (
             <button key={tab} id={`tab-${tab}`} onClick={() => setActiveTab(tab)}
-              className={`px-5 py-2 rounded-lg text-sm font-medium capitalize transition-all border ${
-                activeTab === tab 
-                  ? 'bg-brand/10 text-brand border-brand/30' 
+              className={`px-5 py-2 rounded-lg text-sm font-medium capitalize transition-all border ${activeTab === tab
+                  ? 'bg-brand/10 text-brand border-brand/30'
                   : 'bg-surface text-muted border-border hover:bg-background'
-              }`}>
+                }`}>
               {tab === 'problems' ? '📝 Problems' : '👥 Students'}
             </button>
           ))}

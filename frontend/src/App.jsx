@@ -33,10 +33,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <Suspense fallback={
-        <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="min-h-screen bg-background flex items-center justify-center transition-colors duration-300">
           <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-[#ffa116] border-t-transparent rounded-full animate-spin" />
-            <p className="text-[#ffa116] font-bold tracking-widest uppercase text-xs">Initializing Code Hunt...</p>
+            <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+            <p className="text-brand font-bold tracking-widest uppercase text-xs">Initializing Code Hunt...</p>
           </div>
         </div>
       }>

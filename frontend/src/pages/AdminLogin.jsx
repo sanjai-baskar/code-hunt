@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/client';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('admin@codehunt.com');
@@ -32,7 +33,10 @@ export default function AdminLogin() {
         {/* Decorative Top Border */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500" />
         
-        <div className="text-center mb-10 mt-2">
+        <div className="text-center mb-10 mt-2 relative">
+          <div className="absolute top-0 right-0">
+            <ThemeToggle />
+          </div>
           <div className="flex justify-center items-center gap-2 mb-4">
             <span className="text-4xl">🛡️</span>
           </div>

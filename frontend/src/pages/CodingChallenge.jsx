@@ -7,6 +7,7 @@ import WebcamMonitor from '../components/WebcamMonitor';
 import DistractionBanner from '../components/DistractionBanner';
 import TestResults from '../components/TestResults';
 import Toast from '../components/Toast';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function CodingChallenge() {
   const { id } = useParams();
@@ -196,7 +197,7 @@ export default function CodingChallenge() {
   };
 
   if (loading) return (
-    <div className="h-screen bg-background flex items-center justify-center">
+    <div className="h-screen bg-background flex items-center justify-center transition-colors duration-300">
       <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
@@ -237,6 +238,7 @@ export default function CodingChallenge() {
         </div>
         
         <div className="flex items-center gap-2 md:gap-6">
+          <ThemeToggle />
           <div className="flex items-center gap-2 text-[10px] md:text-xs text-muted">
              <span className="whitespace-nowrap">⏱ {formatted()}</span>
              <span className="text-border">|</span>
@@ -255,7 +257,7 @@ export default function CodingChallenge() {
             <button
               onClick={submitCode}
               disabled={submitLoading || submitted}
-              className="px-2 py-1 md:px-4 md:py-1.5 bg-[#2cbb5d] hover:bg-[#34d399] text-white text-[10px] md:text-xs font-bold rounded disabled:opacity-50 transition-colors"
+              className="px-2 py-1 md:px-4 md:py-1.5 bg-green-600 hover:bg-green-500 text-white text-[10px] md:text-xs font-bold rounded disabled:opacity-50 transition-colors"
             >
               {submitLoading ? '...' : submitted ? 'Ok' : 'Submit'}
             </button>
