@@ -21,16 +21,19 @@ export default function AdminDashboard() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [pRes, sRes, settingsRes] = await Promise.all([
+      // Use individual try-catches or allSettled to be more resilient
+      const results = await Promise.allSettled([
         api.get('/problems'),
         api.get('/admin/students'),
         api.get('/admin/settings'),
       ]);
-      setProblems(pRes.data);
-      setStudents(sRes.data);
-      setWebcamEnabled(settingsRes.data.webcamEnabled);
+
+      if (results[0].status === 'fulfilled') setProblems(results[0].value.data);
+      if (results[1].status === 'fulfilled') setStudents(results[1].value.data);
+      if (results[2].status === 'fulfilled') setWebcamEnabled(results[2].value.data.webcamEnabled);
+
     } catch (e) {
-      console.error(e);
+      console.error("Fetch error:", e);
     } finally {
       setLoading(false);
     }
