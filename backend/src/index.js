@@ -8,6 +8,7 @@ const runRoutes = require('./routes/run');
 const submitRoutes = require('./routes/submit');
 const logRoutes = require('./routes/logs');
 const adminRoutes = require('./routes/admin');
+const settingsRoutes = require('./routes/settings');
 
 const path = require('path');
 
@@ -30,6 +31,7 @@ app.use(['/api/run', '/run'], runRoutes);
 app.use(['/api/submit', '/submit'], submitRoutes);
 app.use(['/api/logs', '/logs'], logRoutes);
 app.use(['/api/admin', '/admin'], adminRoutes);
+app.use(['/api/settings', '/settings'], settingsRoutes);
 
 // SPA Catch-all: If it's not an API call, serve the index.html
 app.get('*', (req, res, next) => {

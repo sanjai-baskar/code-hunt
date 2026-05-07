@@ -8,27 +8,27 @@ datasource db {
 }
 
 model User {
-  id              String           @id @default(cuid())
-  email           String           @unique
-  password        String
-  name            String
-  role            String           @default("student")
-  createdAt       DateTime         @default(now())
-  submissions     Submission[]
-  distractionLogs DistractionLog[]
+  id                  String                @id @default(cuid())
+  email               String                @unique
+  password            String
+  name                String
+  role                String                @default("student")
+  createdAt           DateTime              @default(now())
+  submissions         Submission[]
+  distractionSummaries DistractionSummary[]
 }
 
 model Problem {
-  id              String           @id @default(cuid())
-  title           String
-  description     String
-  difficulty      String           @default("Easy")
-  testCases       String
-  functionName    String           @default("solution")
-  starterCode     String           @default("")
-  createdAt       DateTime         @default(now())
-  submissions     Submission[]
-  distractionLogs DistractionLog[]
+  id                  String                @id @default(cuid())
+  title               String
+  description         String
+  difficulty          String                @default("Easy")
+  testCases           String
+  functionName        String                @default("solution")
+  starterCode         String                @default("")
+  createdAt           DateTime              @default(now())
+  submissions         Submission[]
+  distractionSummaries DistractionSummary[]
 }
 
 model Submission {
@@ -40,19 +40,26 @@ model Submission {
   passedTestCases  Boolean  @default(false)
   distractionCount Int      @default(0)
   timestamp        DateTime @default(now())
-  student          User     @relation(fields: [studentId], references: [id])
-  problem          Problem  @relation(fields: [problemId], references: [id])
+  student          User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  problem          Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
 }
 
-model DistractionLog {
-  id           String   @id @default(cuid())
-  studentId    String
-  problemId    String
-  direction    String
-  startTime    DateTime
-  endTime      DateTime
-  codeSnapshot String
-  createdAt    DateTime @default(now())
-  student      User     @relation(fields: [studentId], references: [id])
-  problem      Problem  @relation(fields: [problemId], references: [id])
+// Lightweight: one row per student per problem session
+model DistractionSummary {
+  id               String   @id @default(cuid())
+  studentId        String
+  problemId        String
+  hadDistraction   Boolean  @default(false)
+  distractionCount Int      @default(0)
+  lastUpdated      DateTime @default(now()) @updatedAt
+  student          User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  problem          Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, problemId])
+}
+
+// Global site settings — always has one row with id="global"
+model SiteSettings {
+  id            String  @id @default("global")
+  webcamEnabled Boolean @default(true)
 }

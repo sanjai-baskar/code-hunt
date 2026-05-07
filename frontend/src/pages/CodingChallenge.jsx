@@ -29,6 +29,7 @@ export default function CodingChallenge() {
   const [isDisqualified, setIsDisqualified] = useState(false);
   const [useCustomInput, setUseCustomInput] = useState(false);
   const [customInput, setCustomInput] = useState('');
+  const [webcamEnabled, setWebcamEnabled] = useState(true);
   const codeRef = useRef(code);
 
   useEffect(() => { codeRef.current = code; }, [code]);
@@ -40,12 +41,16 @@ export default function CodingChallenge() {
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 5000);
   }, []);
 
-  // fetch problem data
+  // Fetch problem + webcam setting
   useEffect(() => {
-    api.get(`/problems/${id}`)
-      .then(({ data }) => {
-        setProblem(data);
-        setCode(data.starterCode || '');
+    Promise.all([
+      api.get(`/problems/${id}`),
+      api.get('/settings/webcam'),
+    ])
+      .then(([{ data: problem }, { data: settings }]) => {
+        setProblem(problem);
+        setCode(problem.starterCode || '');
+        setWebcamEnabled(settings.webcamEnabled);
       })
       .catch(() => navigate('/student'))
       .finally(() => setLoading(false));
@@ -58,14 +63,8 @@ export default function CodingChallenge() {
     const handleVisibility = () => {
       if (document.visibilityState === 'hidden' && !isDisqualified) {
         setIsDisqualified(true);
-        api.post('/logs', {
-          problemId: id,
-          direction: 'multi-tab-detection',
-          startTime: new Date().toISOString(),
-          endTime: new Date().toISOString(),
-          codeSnapshot: codeRef.current
-        }).catch(() => { });
-
+        // Only send problemId — no code snapshot
+        api.post('/logs', { problemId: id }).catch(() => {});
         alert("CRITICAL SECURITY VIOLATION: Multi-tab/Window switching detected. Your session has been terminated.");
         localStorage.clear();
         window.location.href = '/login';
@@ -87,20 +86,11 @@ export default function CodingChallenge() {
 
     const handleSecurityViolation = (e) => {
       e.preventDefault();
-
       setDistractionCount(prev => prev + 1);
       addToast("⚠️ Security Violation: Unauthorized action detected!", "error");
-
       setIsDisqualified(true);
-
-      api.post('/logs', {
-        problemId: id,
-        direction: 'SECURITY_VIOLATION_UNAUTHORIZED_INPUT',
-        startTime: new Date().toISOString(),
-        endTime: new Date().toISOString(),
-        codeSnapshot: codeRef.current
-      }).catch(() => { });
-
+      // Only send problemId — no code snapshot
+      api.post('/logs', { problemId: id }).catch(() => {});
       setTimeout(() => {
         alert("SECURITY VIOLATION: Copy, Paste, and Right-click are strictly prohibited. Your session has been terminated and this incident has been logged.");
         localStorage.clear();
@@ -131,13 +121,8 @@ export default function CodingChallenge() {
     // Only terminate on real hardware failure (camera physically unavailable)
     if (direction === 'camera-off') {
       setIsDisqualified(true);
-      api.post('/logs', {
-        problemId: id,
-        direction: 'CRITICAL_camera-off',
-        startTime: new Date().toISOString(),
-        endTime: new Date().toISOString(),
-        codeSnapshot: codeRef.current
-      }).catch(() => { });
+      // Only send problemId — no code snapshot
+      api.post('/logs', { problemId: id }).catch(() => {});
       alert('Camera access was lost. Your session has been terminated.');
       localStorage.clear();
       window.location.href = '/login';
@@ -155,6 +140,8 @@ export default function CodingChallenge() {
       else if (direction === 'multiple-faces') label = 'Multiple faces detected!';
       else label = `Looking ${direction}`;
       addToast(`⚠️ ${label}`, 'warn');
+      // Lightweight log — only problemId, no code snapshot
+      api.post('/logs', { problemId: id }).catch(() => {});
       if (next >= 10) {
         setShowBanner(true);
         if (document.documentElement.requestFullscreen) {
@@ -332,11 +319,14 @@ export default function CodingChallenge() {
         </div>
       </div>
 
-      <WebcamMonitor
-        onDistraction={handleDistraction}
-        getCode={() => codeRef.current}
-        problemId={id}
-      />
+      {/* Webcam Monitor — only if webcam is enabled by admin */}
+      {webcamEnabled && (
+        <WebcamMonitor
+          onDistraction={handleDistraction}
+          getCode={() => codeRef.current}
+          problemId={id}
+        />
+      )}
       <Toast toasts={toasts} />
     </div>
   );

@@ -5,43 +5,34 @@ const { authenticateToken } = require('../middleware/auth');
 
 const prisma = new PrismaClient();
 
-// POST /api/logs — save a distraction event
+// POST /api/logs — upsert distraction summary (lightweight, one row per student+problem)
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { problemId, direction, startTime, endTime, codeSnapshot } = req.body;
+    const { problemId } = req.body;
     const studentId = req.user.id;
 
-    if (!problemId || !direction || !startTime || !endTime) {
-      return res.status(400).json({ error: 'problemId, direction, startTime, endTime required' });
+    if (!problemId) {
+      return res.status(400).json({ error: 'problemId is required' });
     }
 
-    const log = await prisma.distractionLog.create({
-      data: {
+    // Upsert: create or increment the distraction count for this student+problem session
+    const summary = await prisma.distractionSummary.upsert({
+      where: { studentId_problemId: { studentId, problemId } },
+      update: {
+        hadDistraction: true,
+        distractionCount: { increment: 1 },
+      },
+      create: {
         studentId,
         problemId,
-        direction,
-        startTime: new Date(startTime),
-        endTime: new Date(endTime),
-        codeSnapshot: codeSnapshot || '',
+        hadDistraction: true,
+        distractionCount: 1,
       },
     });
 
-    res.status(201).json(log);
+    res.status(201).json(summary);
   } catch (err) {
     console.error('Log error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// GET /api/logs/my/:problemId — get my distraction logs for a problem
-router.get('/my/:problemId', authenticateToken, async (req, res) => {
-  try {
-    const logs = await prisma.distractionLog.findMany({
-      where: { studentId: req.user.id, problemId: req.params.problemId },
-      orderBy: { createdAt: 'asc' },
-    });
-    res.json(logs);
-  } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
   }
 });

@@ -5,59 +5,138 @@ const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 const prisma = new PrismaClient();
 
-// GET /api/admin/students — list all students
+// GET /api/admin/students — list all students with summary data
 router.get('/students', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const students = await prisma.user.findMany({
       where: { role: 'student' },
-      include: {
-        _count: { select: { submissions: true, distractionLogs: true } },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
         submissions: {
           where: { passedTestCases: true },
-          select: { id: true },
-          take: 1
-        }
+          select: {
+            id: true,
+            problem: { select: { id: true, title: true, difficulty: true } },
+            timestamp: true,
+          },
+          orderBy: { timestamp: 'desc' },
+        },
+        distractionSummaries: {
+          select: {
+            problemId: true,
+            hadDistraction: true,
+            distractionCount: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
-    
-    const studentsWithPassFlag = students.map(s => ({
-      ...s,
-      hasPassed: s.submissions.length > 0
-    }));
 
-    res.json(studentsWithPassFlag);
+    // Build summary per student
+    const result = students.map(s => {
+      const totalDistractions = s.distractionSummaries.reduce((acc, d) => acc + d.distractionCount, 0);
+      const hadAnyDistraction = s.distractionSummaries.some(d => d.hadDistraction);
+      return {
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        createdAt: s.createdAt,
+        solvedProblems: s.submissions,
+        solvedCount: s.submissions.length,
+        totalDistractions,
+        hadDistraction: hadAnyDistraction,
+      };
+    });
 
+    res.json(result);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// GET /api/admin/student/:id — full profile: submissions + distraction logs
+// GET /api/admin/student/:id — detailed profile for one student
 router.get('/student/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const student = await prisma.user.findUnique({
       where: { id: req.params.id },
-      select: { id: true, email: true, name: true, role: true },
+      select: {
+        id: true, email: true, name: true,
+        submissions: {
+          select: {
+            id: true,
+            passedTestCases: true,
+            distractionCount: true,
+            timestamp: true,
+            problem: { select: { id: true, title: true, difficulty: true } },
+          },
+          orderBy: { timestamp: 'desc' },
+        },
+        distractionSummaries: {
+          select: {
+            problemId: true,
+            hadDistraction: true,
+            distractionCount: true,
+            lastUpdated: true,
+            problem: { select: { title: true } },
+          },
+        },
+      },
     });
+
     if (!student) return res.status(404).json({ error: 'Student not found' });
 
-    const submissions = await prisma.submission.findMany({
-      where: { studentId: req.params.id },
-      include: { problem: { select: { title: true, difficulty: true } } },
-      orderBy: { timestamp: 'desc' },
-    });
+    const solvedProblems = student.submissions.filter(s => s.passedTestCases);
+    const totalDistractions = student.distractionSummaries.reduce((acc, d) => acc + d.distractionCount, 0);
+    const hadDistraction = student.distractionSummaries.some(d => d.hadDistraction);
 
-    const distractionLogs = await prisma.distractionLog.findMany({
-      where: { studentId: req.params.id },
-      include: { problem: { select: { title: true } } },
-      orderBy: { createdAt: 'desc' },
+    res.json({
+      student: { id: student.id, name: student.name, email: student.email },
+      submissions: student.submissions,
+      solvedProblems,
+      distractionSummaries: student.distractionSummaries,
+      totalDistractions,
+      hadDistraction,
     });
-
-    res.json({ student, submissions, distractionLogs });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/admin/settings — get current site settings
+router.get('/settings', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const settings = await prisma.siteSettings.upsert({
+      where: { id: 'global' },
+      update: {},
+      create: { id: 'global', webcamEnabled: true },
+    });
+    res.json(settings);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/admin/settings/webcam — toggle webcam on/off
+router.post('/settings/webcam', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { webcamEnabled } = req.body;
+    if (typeof webcamEnabled !== 'boolean') {
+      return res.status(400).json({ error: 'webcamEnabled must be a boolean' });
+    }
+
+    const settings = await prisma.siteSettings.upsert({
+      where: { id: 'global' },
+      update: { webcamEnabled },
+      create: { id: 'global', webcamEnabled },
+    });
+
+    res.json(settings);
+  } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
   }
 });

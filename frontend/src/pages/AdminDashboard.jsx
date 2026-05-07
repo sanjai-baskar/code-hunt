@@ -15,16 +15,20 @@ export default function AdminDashboard() {
   const [editingProblem, setEditingProblem] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [webcamEnabled, setWebcamEnabled] = useState(true);
+  const [webcamToggling, setWebcamToggling] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [pRes, sRes] = await Promise.all([
+      const [pRes, sRes, settingsRes] = await Promise.all([
         api.get('/problems'),
         api.get('/admin/students'),
+        api.get('/admin/settings'),
       ]);
       setProblems(pRes.data);
       setStudents(sRes.data);
+      setWebcamEnabled(settingsRes.data.webcamEnabled);
     } catch (e) {
       console.error(e);
     } finally {
@@ -40,6 +44,18 @@ export default function AdminDashboard() {
       await api.delete(`/problems/${id}`);
       setProblems((prev) => prev.filter((p) => p.id !== id));
     } catch { alert('Failed to delete.'); }
+  };
+
+  const toggleWebcam = async () => {
+    setWebcamToggling(true);
+    try {
+      const res = await api.post('/admin/settings/webcam', { webcamEnabled: !webcamEnabled });
+      setWebcamEnabled(res.data.webcamEnabled);
+    } catch {
+      alert('Failed to update webcam setting.');
+    } finally {
+      setWebcamToggling(false);
+    }
   };
 
   const logout = () => { localStorage.clear(); navigate('/login'); };
@@ -86,12 +102,35 @@ export default function AdminDashboard() {
           <p className="text-muted">Manage problems and monitor student activity.</p>
         </div>
 
+        {/* ── Webcam Control Card ── */}
+        <div className={`lc-card p-5 mb-8 flex items-center justify-between border ${webcamEnabled ? 'border-green-500/30 bg-green-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
+          <div className="flex items-center gap-4">
+            <span className="text-3xl">{webcamEnabled ? '📷' : '🚫'}</span>
+            <div>
+              <p className="font-bold text-foreground text-lg">Webcam Monitoring</p>
+              <p className="text-sm text-muted">
+                {webcamEnabled
+                  ? 'Webcam is ON — students must use the camera during exams.'
+                  : 'Webcam is OFF — students can take exams without a camera.'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={toggleWebcam}
+            disabled={webcamToggling}
+            className={`relative inline-flex items-center h-8 w-16 rounded-full transition-all duration-300 focus:outline-none disabled:opacity-60 ${webcamEnabled ? 'bg-green-500' : 'bg-red-500/60'}`}
+          >
+            <span className={`inline-block w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300 ${webcamEnabled ? 'translate-x-9' : 'translate-x-1'}`} />
+          </button>
+        </div>
+
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           {[
             { label: 'Total Problems', value: problems.length, icon: '📝' },
             { label: 'Students', value: students.length, icon: '👥' },
-            { label: 'Total Logs', value: students.reduce((a, s) => a + (s._count?.distractionLogs || 0), 0), icon: '👁️' },
+            { label: 'Total Solved', value: students.reduce((a, s) => a + (s.solvedCount || 0), 0), icon: '✅' },
+            { label: 'Had Distractions', value: students.filter(s => s.hadDistraction).length, icon: '⚠️' },
           ].map((s) => (
             <div key={s.label} className="lc-card p-5 flex items-center gap-4 bg-surface border-border">
               <span className="text-3xl">{s.icon}</span>
@@ -108,9 +147,9 @@ export default function AdminDashboard() {
           {['problems', 'students'].map((tab) => (
             <button key={tab} id={`tab-${tab}`} onClick={() => setActiveTab(tab)}
               className={`px-5 py-2 rounded-lg text-sm font-medium capitalize transition-all border ${activeTab === tab
-                  ? 'bg-brand/10 text-brand border-brand/30'
-                  : 'bg-surface text-muted border-border hover:bg-background'
-                }`}>
+                ? 'bg-brand/10 text-brand border-brand/30'
+                : 'bg-surface text-muted border-border hover:bg-background'
+              }`}>
               {tab === 'problems' ? '📝 Problems' : '👥 Students'}
             </button>
           ))}
@@ -128,52 +167,72 @@ export default function AdminDashboard() {
             </div>
 
             <div className="bg-surface border-border border rounded-xl overflow-hidden">
-              {loading ? (
-                <div className="p-8 text-center text-muted">Loading...</div>
-              ) : (
-                <>
-                  {problems.map((p) => (
-                    <div key={p.id} className="p-4 border-b border-border flex items-center justify-between hover:bg-background/50 transition-colors">
-                      <div>
-                        <p className="text-foreground font-bold mb-1">{p.title}</p>
-                        <span className={`badge-${p.difficulty.toLowerCase()}`}>
-                          {p.difficulty}
-                        </span>
-                      </div>
-                      <div className="flex gap-4">
-                        <button onClick={() => { setEditingProblem(p); setShowForm(true); }} className="text-muted hover:text-foreground text-sm font-medium transition-colors">Edit</button>
-                        <button onClick={() => deleteProblem(p.id)} className="text-red-500 hover:text-red-400 text-sm font-medium transition-colors">Delete</button>
-                      </div>
-                    </div>
-                  ))}
-                  {problems.length === 0 && (
-                    <div className="p-8 text-center text-muted">No problems created yet.</div>
-                  )}
-                </>
+              {problems.map((p) => (
+                <div key={p.id} className="p-4 border-b border-border flex items-center justify-between hover:bg-background/50 transition-colors">
+                  <div>
+                    <p className="text-foreground font-bold mb-1">{p.title}</p>
+                    <span className={`badge-${p.difficulty.toLowerCase()}`}>{p.difficulty}</span>
+                  </div>
+                  <div className="flex gap-4">
+                    <button onClick={() => { setEditingProblem(p); setShowForm(true); }} className="text-muted hover:text-foreground text-sm font-medium transition-colors">Edit</button>
+                    <button onClick={() => deleteProblem(p.id)} className="text-red-500 hover:text-red-400 text-sm font-medium transition-colors">Delete</button>
+                  </div>
+                </div>
+              ))}
+              {problems.length === 0 && (
+                <div className="p-8 text-center text-muted">No problems created yet.</div>
               )}
             </div>
           </div>
         )}
 
+        {/* Students Tab */}
         {activeTab === 'students' && (
           <div>
             <h2 className="text-lg font-semibold text-foreground mb-4">Registered Students</h2>
             <div className="space-y-3">
               {students.map((s) => (
-                <div key={s.id} className="lc-card p-5 flex items-center justify-between bg-surface border-border">
-                  <div>
-                    <p className="text-foreground font-bold">
-                      {s.name} {s.hasPassed && <span title="Passed all test cases" className="ml-1 text-brand">❓</span>}
-                    </p>
-                    <p className="text-sm text-muted">{s.email}</p>
-                    <div className="flex gap-4 mt-2">
-                      <span className="text-xs font-bold text-brand">{s._count?.submissions || 0} submissions</span>
-                      <span className="text-xs font-bold text-red-500">{s._count?.distractionLogs || 0} distraction events</span>
+                <div key={s.id} className="lc-card p-5 border-border bg-surface">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-1 flex-wrap">
+                        <p className="text-foreground font-bold">{s.name}</p>
+                        {/* Distraction Badge */}
+                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${s.hadDistraction ? 'bg-red-500/15 text-red-500' : 'bg-green-500/15 text-green-500'}`}>
+                          {s.hadDistraction ? `⚠️ ${s.totalDistractions} distraction${s.totalDistractions !== 1 ? 's' : ''}` : '✅ Clean'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted mb-3">{s.email}</p>
+
+                      {/* Solved Problems */}
+                      <div>
+                        <p className="text-xs text-muted font-bold uppercase tracking-wider mb-2">
+                          Solved {s.solvedCount} problem{s.solvedCount !== 1 ? 's' : ''}
+                        </p>
+                        {s.solvedCount > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {s.solvedProblems.map(sub => (
+                              <span
+                                key={sub.id}
+                                style={{ background: DIFF_COLORS[sub.problem.difficulty]?.bg, color: DIFF_COLORS[sub.problem.difficulty]?.color }}
+                                className="text-xs px-2.5 py-1 rounded-full font-medium border border-current/20"
+                              >
+                                {sub.problem.title}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted italic">No problems solved yet.</p>
+                        )}
+                      </div>
                     </div>
+                    <button
+                      onClick={() => setSelectedStudent(s)}
+                      className="bg-background border border-border text-foreground text-sm px-4 py-2 rounded hover:border-brand transition-colors font-medium shrink-0"
+                    >
+                      Details
+                    </button>
                   </div>
-                  <button onClick={() => setSelectedStudent(s)} className="bg-background border border-border text-foreground text-sm px-4 py-2 rounded hover:border-brand transition-colors font-medium">
-                    View Logs
-                  </button>
                 </div>
               ))}
               {students.length === 0 && (
@@ -193,7 +252,7 @@ export default function AdminDashboard() {
         />
       )}
 
-      {/* Student Logs Modal */}
+      {/* Student Details Modal */}
       {selectedStudent && (
         <StudentLogsModal
           student={selectedStudent}
