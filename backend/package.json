@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
+    "postinstall": "prisma generate",
     "db:push": "npx prisma db push",
     "db:seed": "node src/seed.js",
     "db:studio": "npx prisma studio"

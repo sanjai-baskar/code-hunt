@@ -37,15 +37,16 @@ router.get('/students', authenticateToken, requireAdmin, async (req, res) => {
 
     // Build summary per student
     const result = students.map(s => {
-      const totalDistractions = s.distractionSummaries.reduce((acc, d) => acc + d.distractionCount, 0);
-      const hadAnyDistraction = s.distractionSummaries.some(d => d.hadDistraction);
+      const summaries = s.distractionSummaries || [];
+      const totalDistractions = summaries.reduce((acc, d) => acc + d.distractionCount, 0);
+      const hadAnyDistraction = summaries.some(d => d.hadDistraction);
       return {
         id: s.id,
         name: s.name,
         email: s.email,
         createdAt: s.createdAt,
-        solvedProblems: s.submissions,
-        solvedCount: s.submissions.length,
+        solvedProblems: s.submissions || [],
+        solvedCount: (s.submissions || []).length,
         totalDistractions,
         hadDistraction: hadAnyDistraction,
       };
@@ -89,9 +90,10 @@ router.get('/student/:id', authenticateToken, requireAdmin, async (req, res) => 
 
     if (!student) return res.status(404).json({ error: 'Student not found' });
 
-    const solvedProblems = student.submissions.filter(s => s.passedTestCases);
-    const totalDistractions = student.distractionSummaries.reduce((acc, d) => acc + d.distractionCount, 0);
-    const hadDistraction = student.distractionSummaries.some(d => d.hadDistraction);
+    const solvedProblems = (student.submissions || []).filter(s => s.passedTestCases);
+    const summaries = student.distractionSummaries || [];
+    const totalDistractions = summaries.reduce((acc, d) => acc + d.distractionCount, 0);
+    const hadDistraction = summaries.some(d => d.hadDistraction);
 
     res.json({
       student: { id: student.id, name: student.name, email: student.email },
