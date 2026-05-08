@@ -29,7 +29,7 @@ export default function CodingChallenge() {
   const [isDisqualified, setIsDisqualified] = useState(false);
   const [useCustomInput, setUseCustomInput] = useState(false);
   const [customInput, setCustomInput] = useState('');
-  const [webcamEnabled, setWebcamEnabled] = useState(true);
+  const [webcamEnabled, setWebcamEnabled] = useState(false);
   const codeRef = useRef(code);
 
   useEffect(() => { codeRef.current = code; }, [code]);
@@ -199,7 +199,7 @@ export default function CodingChallenge() {
               This environment is proctored by AI. By starting, you agree to:
               <br /><br />
               • Automatic <strong>Full Screen</strong> mode<br />
-              • Active <strong>Face & Gaze</strong> monitoring<br />
+              {webcamEnabled && <div className="inline">• Active <strong>Face & Gaze</strong> monitoring<br /></div>}
               • <strong>Disqualification</strong> on tab/window switching
             </p>
             <button
@@ -228,10 +228,14 @@ export default function CodingChallenge() {
           <ThemeToggle />
           <div className="flex items-center gap-2 text-[10px] md:text-xs text-muted">
              <span className="whitespace-nowrap">⏱ {formatted()}</span>
-             <span className="text-border">|</span>
-             <span className={`${distractionCount >= 10 ? 'text-red-500' : 'text-brand'} whitespace-nowrap`}>
-              👁️ {distractionCount}/10
-            </span>
+             {webcamEnabled && (
+               <>
+                 <span className="text-border">|</span>
+                 <span className={`${distractionCount >= 10 ? 'text-red-500' : 'text-brand'} whitespace-nowrap`}>
+                   👁️ {distractionCount}/10
+                 </span>
+               </>
+             )}
           </div>
           <div className="flex gap-1 md:gap-2">
             <button

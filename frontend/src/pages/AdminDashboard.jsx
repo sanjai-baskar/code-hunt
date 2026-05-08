@@ -50,12 +50,21 @@ export default function AdminDashboard() {
   };
 
   const toggleWebcam = async () => {
+    if (webcamToggling) return;
+    const nextState = !webcamEnabled;
+    
     setWebcamToggling(true);
+    // Optimistic update
+    setWebcamEnabled(nextState);
+    
     try {
-      const res = await api.post('/admin/settings/webcam', { webcamEnabled: !webcamEnabled });
+      const res = await api.post('/admin/settings/webcam', { webcamEnabled: nextState });
+      // Sync with server response
       setWebcamEnabled(res.data.webcamEnabled);
-    } catch {
-      alert('Failed to update webcam setting.');
+    } catch (err) {
+      // Rollback on error
+      setWebcamEnabled(!nextState);
+      alert('Failed to update webcam setting: ' + (err.response?.data?.error || err.message));
     } finally {
       setWebcamToggling(false);
     }
