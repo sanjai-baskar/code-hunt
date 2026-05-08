@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
 
 const authRoutes = require('./routes/auth');
 const problemRoutes = require('./routes/problems');
@@ -21,7 +22,10 @@ app.use(express.json({ limit: '10mb' }));
 
 // Serve static files from the root 'public' directory
 // This handles the frontend build when deployed as a monorepo
-const publicPath = path.join(__dirname, '../../public');
+const publicPath = fs.existsSync(path.join(process.cwd(), 'public'))
+  ? path.join(process.cwd(), 'public')
+  : path.join(__dirname, '../../public');
+
 app.use(express.static(publicPath));
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
