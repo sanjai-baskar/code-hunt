@@ -7,7 +7,6 @@ export default function Signup() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('student');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -18,12 +17,12 @@ export default function Signup() {
     setError('');
 
     try {
-      const { data } = await api.post('/auth/register', { name, email, password, role });
+      const { data } = await api.post('/auth/signup', { name, email, password });
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      navigate(data.user.role === 'admin' ? '/admin' : '/student');
+      navigate('/student');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(err.response?.data?.error || err.response?.data?.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -82,18 +81,6 @@ export default function Signup() {
               placeholder="••••••••"
               minLength={6}
             />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Account Type</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full lc-input bg-input border-border text-foreground focus:border-brand appearance-none"
-            >
-              <option value="student">Student</option>
-              <option value="admin">Administrator</option>
-            </select>
           </div>
 
           <button
