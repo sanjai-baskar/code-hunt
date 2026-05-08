@@ -13,7 +13,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' *.vercel-scripts.com vercel.live; style-src 'self' 'unsafe-inline' *.googleapis.com; font-src 'self' *.vercel.com *.gstatic.com vercel.live *.vercel.sh *.public.blob.vercel-storage.com; img-src 'self' data: blob: *.vercel-storage.com; connect-src 'self' *.vercel-storage.com *.sentry.io; worker-src 'self' blob:;"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' *.vercel-scripts.com vercel.live cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' *.googleapis.com; font-src 'self' *.vercel.com *.gstatic.com vercel.live *.vercel.sh *.public.blob.vercel-storage.com; img-src 'self' data: blob: *.vercel-storage.com; connect-src 'self' *.vercel-storage.com *.sentry.io cdn.jsdelivr.net; worker-src 'self' blob:;"
         }
       ]
     }
@@ -25,6 +25,14 @@
     },
     {
       "source": "/auth/(.*)",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/settings/(.*)",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/((?!api|auth|settings).*)/",
       "destination": "/api/index.js"
     },
     {
