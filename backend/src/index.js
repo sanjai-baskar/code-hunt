@@ -29,26 +29,13 @@ const publicPath = fs.existsSync(path.join(process.cwd(), 'public'))
 app.use(express.static(publicPath));
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
-// Log requests for debugging deployment routes
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`);
-  next();
-});
-
-app.use('/api/auth', authRoutes);
-app.use('/auth', authRoutes);
-app.use('/api/problems', problemRoutes);
-app.use('/problems', problemRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/admin', adminRoutes);
-app.use('/api/settings', settingsRoutes);
-app.use('/settings', settingsRoutes);
-app.use('/api/run', runRoutes);
-app.use('/run', runRoutes);
-app.use('/api/submit', submitRoutes);
-app.use('/submit', submitRoutes);
-app.use('/api/logs', logRoutes);
-app.use('/logs', logRoutes);
+app.use(['/api/auth', '/auth'], authRoutes);
+app.use(['/api/problems', '/problems'], problemRoutes);
+app.use(['/api/run', '/run'], runRoutes);
+app.use(['/api/submit', '/submit'], submitRoutes);
+app.use(['/api/logs', '/logs'], logRoutes);
+app.use(['/api/admin', '/admin'], adminRoutes);
+app.use(['/api/settings', '/settings'], settingsRoutes);
 
 // SPA Catch-all: If it's not an API call, serve the index.html
 app.get('*', (req, res, next) => {
