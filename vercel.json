@@ -18,8 +18,36 @@
   ],
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/api/:path*",
       "destination": "/api/index.js"
+    },
+    {
+      "source": "/auth/:path*",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/settings/:path*",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/run",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/submit",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/logs",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/(login|signup|student|admin|challenge/.*)",
+      "destination": "/public/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/public/$1"
     }
   ]
 }
