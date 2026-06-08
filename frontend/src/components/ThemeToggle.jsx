@@ -9,7 +9,7 @@ export default function ThemeToggle() {
     if (stored) {
       setIsDark(stored === 'dark');
     } else {
-      setIsDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
+      setIsDark(false);
     }
   }, []);
 

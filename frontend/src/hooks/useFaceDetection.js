@@ -12,7 +12,7 @@ export function useFaceDetection(videoRef, enabled, onResults) {
         locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
       });
       fm.setOptions({
-        maxNumFaces: 1,
+        maxNumFaces: 10,
         refineLandmarks: true,
         minDetectionConfidence: 0.5,
         minTrackingConfidence: 0.5,

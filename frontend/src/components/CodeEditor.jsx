@@ -18,7 +18,7 @@ export default function CodeEditor({ value, onChange, language = 'javascript' })
         height="calc(100% - 32px)"
         language={language}
         theme="light"
-        value={value}
+        defaultValue={value}
         onChange={(val) => onChange(val)}
         options={{
           minimap: { enabled: false },
