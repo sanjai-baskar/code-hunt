@@ -89,7 +89,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-if (process.env.NODE_ENV !== 'production' || process.env.LOCAL_DEV === 'true') {
+if (!process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`🚀 Code Hunt API running at http://localhost:${PORT}`);
   });

@@ -86,7 +86,7 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
 // DELETE /api/problems/:id — delete (admin only)
 router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    await prisma.distractionLog.deleteMany({ where: { problemId: req.params.id } });
+    await prisma.distractionSummary.deleteMany({ where: { problemId: req.params.id } });
     await prisma.submission.deleteMany({ where: { problemId: req.params.id } });
     await prisma.problem.delete({ where: { id: req.params.id } });
     res.json({ message: 'Problem deleted successfully' });

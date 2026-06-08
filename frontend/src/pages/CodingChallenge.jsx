@@ -43,6 +43,13 @@ export default function CodingChallenge() {
 
   // Fetch problem + webcam setting
   useEffect(() => {
+    const timer = setTimeout(() => {
+      if (loading) {
+        console.warn("Initial load taking too long, forcing ready state.");
+        setLoading(false);
+      }
+    }, 8000); // 8 second safety timeout
+
     Promise.all([
       api.get(`/problems/${id}`),
       api.get('/settings/webcam'),
@@ -52,9 +59,18 @@ export default function CodingChallenge() {
         setCode(problem.starterCode || '');
         setWebcamEnabled(settings.webcamEnabled);
       })
-      .catch(() => navigate('/student'))
-      .finally(() => setLoading(false));
-  }, [id, navigate]);
+      .catch((err) => {
+        console.error("Failed to load challenge:", err);
+        addToast("Error loading challenge. Please try again.", "error");
+        // Don't navigate away immediately, give user a chance or show error state
+      })
+      .finally(() => {
+        setLoading(false);
+        clearTimeout(timer);
+      });
+    
+    return () => clearTimeout(timer);
+  }, [id, navigate, addToast]);
 
   // fullscreen / multi‑tab detection
   useEffect(() => {
@@ -184,8 +200,14 @@ export default function CodingChallenge() {
   };
 
   if (loading) return (
-    <div className="h-screen bg-background flex items-center justify-center transition-colors duration-300">
-      <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
+    <div className="h-screen bg-white flex items-center justify-center">
+      <div className="flex flex-col items-center gap-6 animate-fade-in">
+        <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
+        <div className="text-center">
+          <p className="text-foreground font-black text-lg tracking-tight">Preparing Arena</p>
+          <p className="text-muted text-xs uppercase tracking-widest mt-1">Initializing Secure Environment</p>
+        </div>
+      </div>
     </div>
   );
 

@@ -3,12 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id                  String                @id @default(cuid())
+  id                  String                @id @default(auto()) @map("_id") @db.ObjectId
   email               String                @unique
   password            String
   name                String
@@ -19,7 +19,7 @@ model User {
 }
 
 model Problem {
-  id                  String                @id @default(cuid())
+  id                  String                @id @default(auto()) @map("_id") @db.ObjectId
   title               String
   description         String
   difficulty          String                @default("Easy")
@@ -32,9 +32,9 @@ model Problem {
 }
 
 model Submission {
-  id               String   @id @default(cuid())
-  studentId        String
-  problemId        String
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  studentId        String   @db.ObjectId
+  problemId        String   @db.ObjectId
   code             String
   output           String
   passedTestCases  Boolean  @default(false)
@@ -46,9 +46,9 @@ model Submission {
 
 // Lightweight: one row per student per problem session
 model DistractionSummary {
-  id               String   @id @default(cuid())
-  studentId        String
-  problemId        String
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  studentId        String   @db.ObjectId
+  problemId        String   @db.ObjectId
   hadDistraction   Boolean  @default(false)
   distractionCount Int      @default(0)
   lastUpdated      DateTime @default(now()) @updatedAt
@@ -60,6 +60,6 @@ model DistractionSummary {
 
 // Global site settings — always has one row with id="global"
 model SiteSettings {
-  id            String  @id @default("global")
+  id            String  @id @map("_id")
   webcamEnabled Boolean @default(true)
 }
