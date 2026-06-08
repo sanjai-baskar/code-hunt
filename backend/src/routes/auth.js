@@ -6,6 +6,9 @@ const { PrismaClient } = require('@prisma/client');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-dev-only';
 
+// Log env check on startup
+console.log('[auth] DATABASE_URL present:', !!process.env.DATABASE_URL);
+
 const prisma = new PrismaClient();
 
 // POST /api/auth/signup
@@ -81,7 +84,7 @@ router.post('/login', async (req, res) => {
     });
   } catch (err) {
     console.error('Login error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
 
