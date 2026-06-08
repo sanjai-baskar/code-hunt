@@ -27,7 +27,6 @@ export default function CodeEditor({ value, onChange, language = 'javascript' })
         key={language}
         height="calc(100% - 32px)"
         language={language}
-        theme="light"
         defaultValue={value}
         onChange={(val) => onChange(val)}
         options={{
