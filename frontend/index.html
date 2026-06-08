@@ -9,6 +9,28 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <script>
+      // Prevent MediaPipe WASM from crashing Monaco's AMD loader with anonymous defines
+      let _originalDefine;
+      Object.defineProperty(window, 'define', {
+        get() {
+          if (!_originalDefine) return undefined;
+          const interceptor = function(...args) {
+            if (args.length > 0 && typeof args[0] !== 'string') {
+               const factory = args[args.length - 1];
+               if (typeof factory === 'function') factory();
+               return;
+            }
+            return _originalDefine.apply(this, args);
+          };
+          interceptor.amd = _originalDefine.amd;
+          return interceptor;
+        },
+        set(val) {
+          _originalDefine = val;
+        }
+      });
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>

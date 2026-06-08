@@ -350,7 +350,7 @@ export default function CodingChallenge() {
       {webcamEnabled && (
         <WebcamMonitor
           onDistraction={handleDistraction}
-          getCode={() => codeRef.current}
+          getCode={useCallback(() => codeRef.current, [])}
           problemId={id}
         />
       )}
