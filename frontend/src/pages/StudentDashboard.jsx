@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
-import ThemeToggle from '../components/ThemeToggle';
+
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
@@ -42,7 +42,7 @@ export default function StudentDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <ThemeToggle />
+
             <div className="text-right hidden sm:block">
               <p className="text-xs font-bold text-foreground">{user.name}</p>
               <p className="text-[10px] text-muted">{user.email}</p>

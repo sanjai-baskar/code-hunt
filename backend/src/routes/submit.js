@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 // POST /api/submit — final submission (runs code + saves to DB)
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { code, problemId, distractionCount } = req.body;
+    const { code, problemId, distractionCount = 0, language = 'java' } = req.body;
     const studentId = req.user.id;
 
     if (!code || !problemId) {
@@ -20,7 +20,7 @@ router.post('/', authenticateToken, async (req, res) => {
     if (!problem) return res.status(404).json({ error: 'Problem not found' });
 
     const testCases = JSON.parse(problem.testCases);
-    const results = await runCode(code, testCases, problem.functionName);
+    const results = await runCode(code, testCases, problem.functionName, language);
     const allPassed = results.every((r) => r.passed);
     const passedCount = results.filter((r) => r.passed).length;
 

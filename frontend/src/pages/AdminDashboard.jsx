@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
-import ThemeToggle from '../components/ThemeToggle';
+
 import AdminProblemForm from '../components/AdminProblemForm';
 import StudentLogsModal from '../components/StudentLogsModal';
 
@@ -97,7 +97,7 @@ export default function AdminDashboard() {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <ThemeToggle />
+
             <span className="text-sm text-foreground">{user.name}</span>
             <button id="admin-logout" onClick={logout}
               className="px-4 py-2 rounded-lg text-sm transition-all bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20">

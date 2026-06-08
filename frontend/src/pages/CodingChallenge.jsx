@@ -7,7 +7,7 @@ import WebcamMonitor from '../components/WebcamMonitor';
 import DistractionBanner from '../components/DistractionBanner';
 import TestResults from '../components/TestResults';
 import Toast from '../components/Toast';
-import ThemeToggle from '../components/ThemeToggle';
+
 
 export default function CodingChallenge() {
   const { id } = useParams();
@@ -27,8 +27,7 @@ export default function CodingChallenge() {
   const [showBanner, setShowBanner] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [isDisqualified, setIsDisqualified] = useState(false);
-  const [useCustomInput, setUseCustomInput] = useState(false);
-  const [customInput, setCustomInput] = useState('');
+  const [language, setLanguage] = useState('java');
   const [webcamEnabled, setWebcamEnabled] = useState(false);
   const codeRef = useRef(code);
 
@@ -133,6 +132,19 @@ export default function CodingChallenge() {
     start();
   };
 
+  const handleLanguageChange = (lang) => {
+    setLanguage(lang);
+    if (lang === 'java') {
+      setCode(problem?.starterCode || '');
+    } else if (lang === 'python') {
+      setCode('import sys\n\ndef main():\n    # Read from stdin\n    # input_data = sys.stdin.read().split()\n    \n    # Your logic here\n    pass\n\nif __name__ == "__main__":\n    main()');
+    } else if (lang === 'cpp') {
+      setCode('#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main() {\n    // Your logic here\n    \n    return 0;\n}');
+    } else if (lang === 'c') {
+      setCode('#include <stdio.h>\n#include <stdlib.h>\n\nint main() {\n    // Your logic here\n    \n    return 0;\n}');
+    }
+  };
+
   const handleDistraction = useCallback((direction) => {
     // Only terminate on real hardware failure (camera physically unavailable)
     if (direction === 'camera-off') {
@@ -171,8 +183,7 @@ export default function CodingChallenge() {
   const runCode = async () => {
     setRunLoading(true);
     try {
-      const payload = { code, problemId: id };
-      if (useCustomInput) payload.customInput = customInput;
+      const payload = { code, problemId: id, language };
 
       const { data } = await api.post('/run', payload);
       setTestResults(data);
@@ -187,7 +198,7 @@ export default function CodingChallenge() {
   const submitCode = async () => {
     setSubmitLoading(true);
     try {
-      const { data } = await api.post('/submit', { code, problemId: id, distractionCount });
+      const { data } = await api.post('/submit', { code, problemId: id, distractionCount, language });
       setSubmitResult(data);
       setSubmitted(true);
       stop();
@@ -247,7 +258,17 @@ export default function CodingChallenge() {
         </div>
         
         <div className="flex items-center gap-2 md:gap-6">
-          <ThemeToggle />
+          <select 
+            value={language} 
+            onChange={(e) => handleLanguageChange(e.target.value)}
+            className="bg-background border border-border text-foreground text-xs md:text-sm font-bold rounded px-2 py-1 outline-none focus:border-brand"
+          >
+            <option value="java">Java</option>
+            <option value="python">Python</option>
+            <option value="cpp">C++</option>
+            <option value="c">C</option>
+          </select>
+
           <div className="flex items-center gap-2 text-[10px] md:text-xs text-muted">
              <span className="whitespace-nowrap">⏱ {formatted()}</span>
              {webcamEnabled && (
@@ -301,26 +322,6 @@ export default function CodingChallenge() {
           />
 
           <div className="mt-8 pt-8 border-t border-border">
-            <div className="flex items-center gap-2 mb-4">
-              <input 
-                type="checkbox" 
-                id="custom-input-check" 
-                checked={useCustomInput} 
-                onChange={(e) => setUseCustomInput(e.target.checked)} 
-                className="w-4 h-4 rounded border-border text-brand focus:ring-brand bg-background"
-              />
-              <label htmlFor="custom-input-check" className="text-sm font-medium text-foreground cursor-pointer">Use Custom Input</label>
-            </div>
-
-            {useCustomInput && (
-              <textarea
-                value={customInput}
-                onChange={(e) => setCustomInput(e.target.value)}
-                placeholder="Enter input here (e.g. 5 10)..."
-                className="w-full h-32 bg-background border border-border rounded-lg p-3 text-sm text-foreground font-mono focus:outline-none focus:border-brand mb-6"
-              />
-            )}
-
             {testResults && (
               <TestResults results={testResults.results} summary={testResults.summary} />
             )}
@@ -330,7 +331,7 @@ export default function CodingChallenge() {
         {/* Right: Editor */}
         <div className="flex-1 flex flex-col gap-2 overflow-hidden">
           <div className="flex-1 rounded-lg border border-border overflow-hidden bg-background">
-            <CodeEditor value={code} onChange={setCode} language="java" />
+            <CodeEditor value={code} onChange={setCode} language={language} />
           </div>
 
           {/* Bottom Panel (optional console output) */}

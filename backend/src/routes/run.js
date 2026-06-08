@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 // POST /api/run — execute code against all test cases (no DB write)
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { code, problemId, customInput } = req.body;
+    const { code, problemId, customInput, language = 'java' } = req.body;
 
     if (!code || !problemId) {
       return res.status(400).json({ error: 'code and problemId are required' });
@@ -27,7 +27,7 @@ router.post('/', authenticateToken, async (req, res) => {
       testCases = JSON.parse(problem.testCases).filter(c => !c.hidden);
     }
     
-    const results = await runCode(code, testCases, problem.functionName);
+    const results = await runCode(code, testCases, problem.functionName, language);
     const passedCount = results.filter((r) => r.passed).length;
 
     res.json({

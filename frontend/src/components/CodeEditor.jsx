@@ -28,8 +28,7 @@ export default function CodeEditor({ value, onChange, language = 'javascript' })
           scrollBeyondLastLine: false,
           readOnly: false,
           automaticLayout: true,
-          padding: { top: 16 },
-          fontFamily: 'JetBrains Mono, monospace',
+          padding: { top: 16 }
         }}
       />
     </div>

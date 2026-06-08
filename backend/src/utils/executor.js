@@ -4,19 +4,28 @@ const axios = require('axios');
  * Executes student Java code against test cases using the Judge0 CE API (Public).
  * Uses Base64 encoding to ensure special characters don't break the request.
  */
-async function runCode(code, testCases, functionName = 'Main') {
+async function runCode(code, testCases, functionName = 'Main', language = 'java') {
   const results = [];
   
   // Judge0 CE API configuration (Public Instance)
   // Note: base64_encoded=true tells Judge0 to expect b64 and return b64
   const JUDGE0_URL = 'https://ce.judge0.com/submissions?wait=true&base64_encoded=true';
-  const JAVA_LANG_ID = 62; // Java (OpenJDK 13.0.1)
+  
+  // Map our language names to Judge0 language IDs
+  const LANGUAGE_IDS = {
+    java: 62,     // OpenJDK 13.0.1
+    python: 71,   // Python 3.8.1
+    cpp: 54,      // GCC 9.2.0 (C++)
+    c: 50         // GCC 9.2.0 (C)
+  };
+  
+  const langId = LANGUAGE_IDS[language.toLowerCase()] || 62;
 
   for (const testCase of testCases) {
     try {
       const payload = {
         source_code: Buffer.from(code).toString('base64'),
-        language_id: JAVA_LANG_ID,
+        language_id: langId,
         stdin: Buffer.from(testCase.input || '').toString('base64'),
       };
 
