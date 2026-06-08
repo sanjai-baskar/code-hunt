@@ -30,6 +30,7 @@ export default function CodingChallenge() {
   const [language, setLanguage] = useState('java');
   const [webcamEnabled, setWebcamEnabled] = useState(false);
   const codeRef = useRef(code);
+  const getCode = useCallback(() => codeRef.current, []);
 
   useEffect(() => { codeRef.current = code; }, [code]);
 
@@ -350,7 +351,7 @@ export default function CodingChallenge() {
       {webcamEnabled && (
         <WebcamMonitor
           onDistraction={handleDistraction}
-          getCode={useCallback(() => codeRef.current, [])}
+          getCode={getCode}
           problemId={id}
         />
       )}
