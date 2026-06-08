@@ -1,7 +1,54 @@
-import React from 'react';
+// import React from 'react';
+// import Editor from '@monaco-editor/react';
+
+// export default function CodeEditor({ value, onChange, language = 'javascript' }) {
+//   const getExtension = (lang) => {
+//     switch (lang) {
+//       case 'python': return 'main.py';
+//       case 'cpp': return 'main.cpp';
+//       case 'c': return 'main.c';
+//       case 'java': default: return 'Main.java';
+//     }
+//   };
+
+//   return (
+//     <div className="w-full h-full editor-panel">
+//       <div className="bg-[#f0f0f0] px-4 py-2 flex items-center gap-2 border-b border-[#e5e5e5]">
+//         <div className="flex gap-1.5">
+//           <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f56]"></div>
+//           <div className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]"></div>
+//           <div className="w-2.5 h-2.5 rounded-full bg-[#27c93f]"></div>
+//         </div>
+//         <span className="text-[10px] text-gray-500 font-mono ml-2 uppercase tracking-widest">
+//           {language} — {getExtension(language)}
+//         </span>
+//       </div>
+//       <Editor
+//         key={language}
+//         height="calc(100% - 32px)"
+//         language={language}
+//         defaultValue={value}
+//         onChange={(val) => onChange(val)}
+//         options={{
+//           minimap: { enabled: false },
+//           fontSize: 14,
+//           lineNumbers: 'on',
+//           roundedSelection: false,
+//           scrollBeyondLastLine: false,
+//           readOnly: false,
+//           automaticLayout: true,
+//           padding: { top: 16 }
+//         }}
+//       />
+//     </div>
+//   );
+// }
+import React, { useRef } from 'react';
 import Editor from '@monaco-editor/react';
 
 export default function CodeEditor({ value, onChange, language = 'javascript' }) {
+  const editorRef = useRef(null);
+
   const getExtension = (lang) => {
     switch (lang) {
       case 'python': return 'main.py';
@@ -11,8 +58,16 @@ export default function CodeEditor({ value, onChange, language = 'javascript' })
     }
   };
 
+  const handleEditorMount = (editor, monaco) => {
+    editorRef.current = editor;
+    // 1. Auto-focus to make cursor visible immediately
+    editor.focus();
+    // 2. Force layout recalculation to fix cursor/rendering glitches with calc() heights
+    setTimeout(() => editor.layout(), 0);
+  };
+
   return (
-    <div className="w-full h-full editor-panel">
+    <div className="w-full h-full editor-panel relative">
       <div className="bg-[#f0f0f0] px-4 py-2 flex items-center gap-2 border-b border-[#e5e5e5]">
         <div className="flex gap-1.5">
           <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f56]"></div>
@@ -27,8 +82,9 @@ export default function CodeEditor({ value, onChange, language = 'javascript' })
         key={language}
         height="calc(100% - 32px)"
         language={language}
-        defaultValue={value}
-        onChange={(val) => onChange(val)}
+        value={value} // Changed to controlled component
+        onChange={onChange}
+        onMount={handleEditorMount}
         options={{
           minimap: { enabled: false },
           fontSize: 14,
@@ -37,7 +93,13 @@ export default function CodeEditor({ value, onChange, language = 'javascript' })
           scrollBeyondLastLine: false,
           readOnly: false,
           automaticLayout: true,
-          padding: { top: 16 }
+          padding: { top: 16 },
+          // Explicit cursor configuration for better visibility
+          cursorBlinking: 'smooth',
+          cursorSmoothCaretAnimation: 'on',
+          cursorStyle: 'line',
+          cursorWidth: 2,
+          hideCursorInOverviewRuler: false,
         }}
       />
     </div>
