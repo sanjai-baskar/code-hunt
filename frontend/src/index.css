@@ -237,11 +237,7 @@ body,
 
 /* Fix for Monaco cursor disappearing due to Tailwind base resets */
 .monaco-editor .cursor {
-  background-color: #000000 !important;
-  border-left: 2px solid #000000 !important;
-  width: 2px !important;
-  opacity: 1 !important;
-  visibility: visible !important;
+  background: currentColor !important;
 }
 
 /* ── Problem List Redesign ────────────────────────────────────────── */
