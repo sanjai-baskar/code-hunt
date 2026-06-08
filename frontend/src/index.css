@@ -235,9 +235,28 @@ body,
   overflow: hidden;
 }
 
-/* Fix for Monaco cursor disappearing due to Tailwind base resets */
+/* ========== FIX: Restore cursor visibility in Monaco Editor ========== */
 .monaco-editor .cursor {
-  background: currentColor !important;
+  background-color: rgb(var(--color-brand)) !important;
+  caret-color: rgb(var(--color-brand)) !important;
+  width: 2px !important;
+}
+
+.monaco-editor .view-lines .current-line~div .cursor {
+  background-color: rgb(var(--color-brand)) !important;
+}
+
+/* For plain textarea fallback */
+.CodeEditor textarea,
+.editor textarea,
+.monaco-editor textarea {
+  caret-color: rgb(var(--color-brand)) !important;
+}
+
+/* Ensure cursor is not hidden by any Tailwind reset */
+.monaco-editor .cursors-layer .cursor {
+  display: block !important;
+  visibility: visible !important;
 }
 
 /* ── Problem List Redesign ────────────────────────────────────────── */
@@ -288,4 +307,16 @@ body,
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+/* ── Prevent overlays from stealing pointer events ────────────────── */
+.DistractionBanner,
+.distraction-banner {
+  pointer-events: none;
+}
+
+.webcam-monitor iframe,
+.webcam-monitor video,
+.webcam-monitor canvas {
+  pointer-events: none;
 }
