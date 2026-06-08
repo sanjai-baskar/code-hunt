@@ -10,12 +10,22 @@ router.get('/', authenticateToken, async (req, res) => {
   try {
     const problems = await prisma.problem.findMany({
       orderBy: { createdAt: 'desc' },
+      include: {
+        submissions: {
+          where: { studentId: req.user.id, passedTestCases: true },
+          take: 1,
+        },
+      },
     });
     const isAdmin = req.user.role === 'admin';
     const parsed = problems.map((p) => {
       const cases = JSON.parse(p.testCases);
+      const isSolved = p.submissions && p.submissions.length > 0;
+      // Remove submissions from payload to save bandwidth
+      const { submissions, ...problemData } = p;
       return {
-        ...p,
+        ...problemData,
+        isSolved,
         testCases: isAdmin ? cases : cases.filter(c => !c.hidden),
       };
     });
@@ -45,7 +55,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // POST /api/problems — create (admin only)
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { title, description, difficulty, testCases, functionName } = req.body;
+    const { title, description, difficulty, category, testCases, functionName } = req.body;
     if (!title || !description || !testCases || !Array.isArray(testCases)) {
       return res.status(400).json({ error: 'title, description, testCases[] required' });
     }
@@ -54,6 +64,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
         title,
         description,
         difficulty: difficulty || 'Easy',
+        category: category || 'All',
         testCases: JSON.stringify(testCases),
         functionName: functionName || 'solution',
       },
@@ -68,11 +79,12 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 // PUT /api/problems/:id — update (admin only)
 router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { title, description, difficulty, testCases, functionName } = req.body;
+    const { title, description, difficulty, category, testCases, functionName } = req.body;
     const data = {};
     if (title) data.title = title;
     if (description) data.description = description;
     if (difficulty) data.difficulty = difficulty;
+    if (category) data.category = category;
     if (testCases) data.testCases = JSON.stringify(testCases);
     if (functionName) data.functionName = functionName;
 

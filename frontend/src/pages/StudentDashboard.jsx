@@ -9,6 +9,7 @@ export default function StudentDashboard() {
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeCategory, setActiveCategory] = useState('All');
 
   const handleLogout = () => {
     localStorage.clear();
@@ -27,6 +28,14 @@ export default function StudentDashboard() {
       <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
+
+  const categories = ['All', ...new Set(problems.map(p => p.category).filter(c => c && c !== 'All'))];
+  const filteredProblems = activeCategory === 'All' 
+    ? problems 
+    : problems.filter(p => p.category === activeCategory);
+
+  const solvedCount = problems.filter(p => p.isSolved).length;
+  const progressPercent = problems.length > 0 ? (solvedCount / problems.length) * 100 : 0;
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
@@ -62,11 +71,30 @@ export default function StudentDashboard() {
           {/* Main Content */}
           <div className="lg:col-span-3">
             <div className="lc-card overflow-hidden border-border bg-surface">
-              <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-surface">
-                <h2 className="font-bold text-foreground">Problem Set</h2>
-                <div className="flex gap-2 text-xs">
-                  <span className="px-3 py-1 bg-background border border-border rounded-full text-muted">Difficulty ▾</span>
-                  <span className="px-3 py-1 bg-background border border-border rounded-full text-muted">Status ▾</span>
+              <div className="px-6 py-4 border-b border-border flex flex-col gap-4 bg-surface">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-bold text-foreground">Problem Set</h2>
+                  <div className="flex gap-2 text-xs">
+                    <span className="px-3 py-1 bg-background border border-border rounded-full text-muted">Difficulty ▾</span>
+                    <span className="px-3 py-1 bg-background border border-border rounded-full text-muted">Status ▾</span>
+                  </div>
+                </div>
+                
+                {/* Category Tabs */}
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                  {categories.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setActiveCategory(cat)}
+                      className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border ${
+                        activeCategory === cat 
+                          ? 'bg-brand/10 text-brand border-brand/30' 
+                          : 'bg-background text-muted border-border hover:border-muted'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -78,7 +106,7 @@ export default function StudentDashboard() {
                 <div className="p-10 text-center text-red-400">{error}</div>
               ) : (
                 <div className="bg-surface">
-                  {problems.map((p, i) => (
+                  {filteredProblems.map((p, i) => (
                     <div 
                       key={p.id} 
                       className="problem-row border-b border-border hover:bg-background/50 cursor-pointer"
@@ -90,16 +118,23 @@ export default function StudentDashboard() {
                           {p.title}
                         </span>
                       </div>
-                      <div className="w-16 md:w-24 text-center">
+                      <div className="w-16 md:w-24 text-center flex items-center justify-center gap-2">
                         <span className={`badge-${p.difficulty.toLowerCase()} text-[10px] md:text-xs`}>
                           {p.difficulty}
                         </span>
                       </div>
-                      <div className="hidden sm:block w-20 text-right">
-                        <span className="text-xs text-green-500">Solve →</span>
+                      <div className="hidden sm:block w-24 text-right">
+                        {p.isSolved ? (
+                          <span className="text-xs font-bold text-green-500 bg-green-500/10 px-2 py-1 rounded">Solved ✅</span>
+                        ) : (
+                          <span className="text-xs text-brand hover:underline">Solve →</span>
+                        )}
                       </div>
                     </div>
                   ))}
+                  {filteredProblems.length === 0 && (
+                    <div className="p-8 text-center text-muted">No problems found for {activeCategory}.</div>
+                  )}
                 </div>
               )}
             </div>
@@ -112,10 +147,10 @@ export default function StudentDashboard() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted">Solved</span>
-                  <span className="text-lg font-bold text-foreground">0 / {problems.length}</span>
+                  <span className="text-lg font-bold text-foreground">{solvedCount} / {problems.length}</span>
                 </div>
                 <div className="w-full bg-border h-2 rounded-full overflow-hidden">
-                  <div className="bg-brand h-full" style={{ width: '0%' }}></div>
+                  <div className="bg-brand h-full transition-all duration-500" style={{ width: `${progressPercent}%` }}></div>
                 </div>
               </div>
             </div>

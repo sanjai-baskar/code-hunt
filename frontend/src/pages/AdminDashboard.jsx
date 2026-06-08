@@ -183,7 +183,10 @@ export default function AdminDashboard() {
                 <div key={p.id} className="p-4 border-b border-border flex items-center justify-between hover:bg-background/50 transition-colors">
                   <div>
                     <p className="text-foreground font-bold mb-1">{p.title}</p>
-                    <span className={`badge-${p.difficulty.toLowerCase()}`}>{p.difficulty}</span>
+                    <div className="flex gap-2 items-center">
+                      <span className={`badge-${p.difficulty.toLowerCase()}`}>{p.difficulty}</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20">{p.category || 'All'}</span>
+                    </div>
                   </div>
                   <div className="flex gap-4">
                     <button onClick={() => { setEditingProblem(p); setShowForm(true); }} className="text-muted hover:text-foreground text-sm font-medium transition-colors">Edit</button>

@@ -23,6 +23,7 @@ model Problem {
   title               String
   description         String
   difficulty          String                @default("Easy")
+  category            String                @default("All")
   testCases           String
   functionName        String                @default("solution")
   starterCode         String                @default("")

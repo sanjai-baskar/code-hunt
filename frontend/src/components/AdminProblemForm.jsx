@@ -6,6 +6,7 @@ export default function AdminProblemForm({ problem, onClose, onSaved }) {
     title: '',
     description: '',
     difficulty: 'Easy',
+    category: 'All',
     functionName: 'Main',
     starterCode: '',
     testCases: [{ input: '', output: '' }]
@@ -18,6 +19,7 @@ export default function AdminProblemForm({ problem, onClose, onSaved }) {
         title: problem.title,
         description: problem.description,
         difficulty: problem.difficulty,
+        category: problem.category || 'All',
         functionName: problem.functionName || 'Main',
         starterCode: problem.starterCode || '',
         testCases: problem.testCases || [{ input: '', output: '' }]
@@ -71,7 +73,7 @@ export default function AdminProblemForm({ problem, onClose, onSaved }) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm text-[var(--text-main)] font-medium mb-1.5">Problem Title</label>
               <input 
@@ -92,6 +94,20 @@ export default function AdminProblemForm({ problem, onClose, onSaved }) {
                 <option value="Easy">Easy</option>
                 <option value="Medium">Medium</option>
                 <option value="Hard">Hard</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-[var(--text-main)] font-medium mb-1.5">Category</label>
+              <select 
+                className="lc-input" 
+                value={formData.category} 
+                onChange={e => setFormData({ ...formData, category: e.target.value })}
+              >
+                <option value="All">All / General</option>
+                <option value="Java">Java</option>
+                <option value="Python">Python</option>
+                <option value="C++">C++</option>
+                <option value="C">C</option>
               </select>
             </div>
           </div>
