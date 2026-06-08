@@ -2,7 +2,7 @@
   "version": 2,
   "functions": {
     "api/index.js": {
-      "includeFiles": "{backend,public}/**"
+      "includeFiles": ""
     }
   },
   "headers": [
@@ -19,27 +19,27 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "/api/index.js"
+      "destination": "https://code-hunt-3wgp.onrender.com/api/:path*"
     },
     {
       "source": "/auth/:path*",
-      "destination": "/api/index.js"
+      "destination": "https://code-hunt-3wgp.onrender.com/api/auth/:path*"
     },
     {
       "source": "/settings/:path*",
-      "destination": "/api/index.js"
+      "destination": "https://code-hunt-3wgp.onrender.com/api/settings/:path*"
     },
     {
       "source": "/run",
-      "destination": "/api/index.js"
+      "destination": "https://code-hunt-3wgp.onrender.com/api/run"
     },
     {
       "source": "/submit",
-      "destination": "/api/index.js"
+      "destination": "https://code-hunt-3wgp.onrender.com/api/submit"
     },
     {
       "source": "/logs",
-      "destination": "/api/index.js"
+      "destination": "https://code-hunt-3wgp.onrender.com/api/logs"
     },
     {
       "source": "/(login|signup|student|admin|challenge/.*)",
