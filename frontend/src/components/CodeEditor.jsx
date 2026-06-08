@@ -2,6 +2,15 @@ import React from 'react';
 import Editor from '@monaco-editor/react';
 
 export default function CodeEditor({ value, onChange, language = 'javascript' }) {
+  const getExtension = (lang) => {
+    switch (lang) {
+      case 'python': return 'main.py';
+      case 'cpp': return 'main.cpp';
+      case 'c': return 'main.c';
+      case 'java': default: return 'Main.java';
+    }
+  };
+
   return (
     <div className="w-full h-full editor-panel">
       <div className="bg-[#f0f0f0] px-4 py-2 flex items-center gap-2 border-b border-[#e5e5e5]">
@@ -11,10 +20,11 @@ export default function CodeEditor({ value, onChange, language = 'javascript' })
           <div className="w-2.5 h-2.5 rounded-full bg-[#27c93f]"></div>
         </div>
         <span className="text-[10px] text-gray-500 font-mono ml-2 uppercase tracking-widest">
-          {language} — Main.java
+          {language} — {getExtension(language)}
         </span>
       </div>
       <Editor
+        key={language}
         height="calc(100% - 32px)"
         language={language}
         theme="light"
