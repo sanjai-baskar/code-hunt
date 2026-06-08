@@ -330,7 +330,7 @@ export default function CodingChallenge() {
 
         {/* Right: Editor */}
         <div className="flex-1 flex flex-col gap-2 overflow-hidden">
-          <div className="flex-1 rounded-lg border border-border overflow-hidden bg-background">
+          <div className="flex-1 min-h-0">
             <CodeEditor value={code} onChange={setCode} language={language} />
           </div>
 
