@@ -16,11 +16,17 @@ export default function StudentDashboard() {
     navigate('/login');
   };
 
-  useEffect(() => {
-    api.get('/problems')
+  const fetchProblems = () => {
+    api.get(`/problems?t=${Date.now()}`)
       .then(({ data }) => setProblems(data))
       .catch(() => setError('Failed to load problems.'))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchProblems();
+    window.addEventListener('focus', fetchProblems);
+    return () => window.removeEventListener('focus', fetchProblems);
   }, []);
 
   if (loading) return (
