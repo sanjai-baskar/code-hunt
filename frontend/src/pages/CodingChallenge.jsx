@@ -72,9 +72,9 @@ export default function CodingChallenge() {
     return () => clearTimeout(timer);
   }, [id, navigate, addToast]);
 
-  // fullscreen / multi‑tab detection
+  // fullscreen / multi-tab detection
   useEffect(() => {
-    if (!hasStarted) return;
+    if (!hasStarted || submitted) return;
 
     const handleVisibility = () => {
       if (document.visibilityState === 'hidden' && !isDisqualified) {
@@ -94,11 +94,11 @@ export default function CodingChallenge() {
       document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('blur', handleVisibility);
     };
-  }, [hasStarted, id, isDisqualified]);
+  }, [hasStarted, id, isDisqualified, submitted]);
 
-  // copy/paste/right‑click security – now addToast exists
+  // copy/paste/right-click security
   useEffect(() => {
-    if (!hasStarted || isDisqualified) return;
+    if (!hasStarted || isDisqualified || submitted) return;
 
     const handleSecurityViolation = (e) => {
       e.preventDefault();
@@ -123,7 +123,7 @@ export default function CodingChallenge() {
       document.removeEventListener('paste', handleSecurityViolation);
       document.removeEventListener('contextmenu', handleSecurityViolation);
     };
-  }, [hasStarted, id, isDisqualified, addToast]);
+  }, [hasStarted, id, isDisqualified, submitted, addToast]);
 
   const startChallenge = () => {
     if (document.documentElement.requestFullscreen) {
@@ -203,7 +203,14 @@ export default function CodingChallenge() {
       setSubmitResult(data);
       setSubmitted(true);
       stop();
-      addToast('Submitted successfully!', 'success');
+      addToast(
+        data.allPassed
+          ? `✅ Submitted! ${data.summary?.passed ?? 0}/${data.summary?.total ?? 0} test cases passed.`
+          : `⚠️ Submitted. Only ${data.summary?.passed ?? 0}/${data.summary?.total ?? 0} test cases passed.`,
+        data.allPassed ? 'success' : 'warn'
+      );
+      // Navigate back to dashboard after 2s so solved count refreshes
+      setTimeout(() => navigate('/student'), 2000);
     } catch (err) {
       addToast('Submission failed.', 'error');
     } finally {
