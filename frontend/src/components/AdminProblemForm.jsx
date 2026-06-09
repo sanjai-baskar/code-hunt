@@ -64,12 +64,76 @@ export default function AdminProblemForm({ problem, onClose, onSaved }) {
     }
   };
 
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target.result;
+      const newFormData = { ...formData };
+      
+      const titleMatch = text.match(/Title:\s*(.+)/i);
+      if (titleMatch) newFormData.title = titleMatch[1].trim();
+
+      const difficultyMatch = text.match(/Difficulty:\s*(.+)/i);
+      if (difficultyMatch) {
+        const diff = difficultyMatch[1].trim();
+        if (['Easy', 'Medium', 'Hard'].includes(diff)) {
+          newFormData.difficulty = diff;
+        }
+      }
+
+      const categoryMatch = text.match(/Category:\s*(.+)/i);
+      if (categoryMatch) newFormData.category = categoryMatch[1].trim();
+
+      const functionNameMatch = text.match(/Main Class Name:\s*(.+)/i) || text.match(/Function Name:\s*(.+)/i);
+      if (functionNameMatch) newFormData.functionName = functionNameMatch[1].trim();
+
+      const descMatch = text.match(/Description:\s*([\s\S]*?)(?=Starter Code:|Test Cases:|Input:|$)/i);
+      if (descMatch) newFormData.description = descMatch[1].trim();
+      else if (!titleMatch && !difficultyMatch && !categoryMatch) {
+         newFormData.description = text; // Fallback: just put all text in description if no headers found
+      }
+
+      const starterMatch = text.match(/Starter Code:\s*([\s\S]*?)(?=Test Cases:|Input:|$)/i);
+      if (starterMatch) newFormData.starterCode = starterMatch[1].trim();
+
+      const testCases = [];
+      const tcRegex = /Input:\s*([\s\S]*?)Output:\s*([\s\S]*?)(?=Input:|$)/gi;
+      let match;
+      while ((match = tcRegex.exec(text)) !== null) {
+        testCases.push({
+          input: match[1].trim(),
+          output: match[2].trim()
+        });
+      }
+      
+      if (testCases.length > 0) {
+        newFormData.testCases = testCases;
+      }
+
+      setFormData(newFormData);
+    };
+    reader.readAsText(file);
+    e.target.value = null; // reset input
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="lc-card w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 animate-fade-in bg-white">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-[var(--text-main)]">{problem ? 'Edit Problem' : 'Create New Problem'}</h2>
-          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-main)] text-xl">✕</button>
+          <div className="flex items-center gap-4">
+            <label className="cursor-pointer text-sm font-medium text-[#45A29E] bg-[#45A29E]/10 hover:bg-[#45A29E]/20 px-4 py-2 rounded transition-colors flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+              </svg>
+              Upload .txt
+              <input type="file" accept=".txt" className="hidden" onChange={handleFileUpload} />
+            </label>
+            <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-main)] text-xl">✕</button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
