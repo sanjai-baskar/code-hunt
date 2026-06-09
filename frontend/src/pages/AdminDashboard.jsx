@@ -3,16 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 
 import AdminProblemForm from '../components/AdminProblemForm';
+import AdminContestForm from '../components/AdminContestForm';
 import StudentLogsModal from '../components/StudentLogsModal';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const [problems, setProblems] = useState([]);
+  const [contests, setContests] = useState([]);
   const [students, setStudents] = useState([]);
   const [activeTab, setActiveTab] = useState('problems');
   const [showForm, setShowForm] = useState(false);
+  const [showContestForm, setShowContestForm] = useState(false);
   const [editingProblem, setEditingProblem] = useState(null);
+  const [editingContest, setEditingContest] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [webcamEnabled, setWebcamEnabled] = useState(true);
@@ -23,14 +27,16 @@ export default function AdminDashboard() {
     try {
       // Use individual try-catches or allSettled to be more resilient
       const results = await Promise.allSettled([
-        api.get('/problems'),
-        api.get('/admin/students'),
-        api.get('/admin/settings'),
+        api.get(`/problems?t=${Date.now()}`),
+        api.get(`/admin/students?t=${Date.now()}`),
+        api.get(`/admin/settings?t=${Date.now()}`),
+        api.get(`/contests?t=${Date.now()}`),
       ]);
 
       if (results[0].status === 'fulfilled') setProblems(results[0].value.data);
       if (results[1].status === 'fulfilled') setStudents(results[1].value.data);
       if (results[2].status === 'fulfilled') setWebcamEnabled(results[2].value.data.webcamEnabled);
+      if (results[3].status === 'fulfilled') setContests(results[3].value.data);
 
     } catch (e) {
       console.error("Fetch error:", e);
@@ -39,7 +45,11 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { 
+    fetchData(); 
+    window.addEventListener('focus', fetchData);
+    return () => window.removeEventListener('focus', fetchData);
+  }, [fetchData]);
 
   const deleteProblem = async (id) => {
     if (!window.confirm('Delete this problem? All related submissions and logs will also be deleted.')) return;
@@ -47,6 +57,14 @@ export default function AdminDashboard() {
       await api.delete(`/problems/${id}`);
       setProblems((prev) => prev.filter((p) => p.id !== id));
     } catch { alert('Failed to delete.'); }
+  };
+
+  const deleteContest = async (id) => {
+    if (!window.confirm('Delete this contest? All related data will be lost.')) return;
+    try {
+      await api.delete(`/admin/contests/${id}`);
+      setContests((prev) => prev.filter((c) => c.id !== id));
+    } catch { alert('Failed to delete contest.'); }
   };
 
   const toggleWebcam = async () => {
@@ -156,13 +174,13 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6">
-          {['problems', 'students'].map((tab) => (
+          {['problems', 'contests', 'students'].map((tab) => (
             <button key={tab} id={`tab-${tab}`} onClick={() => setActiveTab(tab)}
               className={`px-5 py-2 rounded-lg text-sm font-medium capitalize transition-all border ${activeTab === tab
                 ? 'bg-brand/10 text-brand border-brand/30'
                 : 'bg-surface text-muted border-border hover:bg-background'
               }`}>
-              {tab === 'problems' ? '📝 Problems' : '👥 Students'}
+              {tab === 'problems' ? '📝 Problems' : tab === 'contests' ? '🏆 Contests' : '👥 Students'}
             </button>
           ))}
         </div>
@@ -196,6 +214,41 @@ export default function AdminDashboard() {
               ))}
               {problems.length === 0 && (
                 <div className="p-8 text-center text-muted">No problems created yet.</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Contests Tab */}
+        {activeTab === 'contests' && (
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold text-foreground">Contests</h2>
+              <button id="add-contest-btn" onClick={() => { setEditingContest(null); setShowContestForm(true); }}
+                className="lc-btn-primary px-4 py-2 text-sm !py-2">
+                + Add Contest
+              </button>
+            </div>
+
+            <div className="bg-surface border-border border rounded-xl overflow-hidden">
+              {contests.map((c) => (
+                <div key={c.id} className="p-4 border-b border-border flex items-center justify-between hover:bg-background/50 transition-colors">
+                  <div>
+                    <p className="text-foreground font-bold mb-1">{c.title}</p>
+                    <p className="text-xs text-muted">
+                      {new Date(c.startTime).toLocaleString()} - {new Date(c.endTime).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-brand font-medium mt-1">
+                      {c._count?.problems || 0} Problems
+                    </p>
+                  </div>
+                  <div className="flex gap-4">
+                    <button onClick={() => deleteContest(c.id)} className="text-red-500 hover:text-red-400 text-sm font-medium transition-colors">Delete</button>
+                  </div>
+                </div>
+              ))}
+              {contests.length === 0 && (
+                <div className="p-8 text-center text-muted">No contests created yet.</div>
               )}
             </div>
           </div>
@@ -264,6 +317,16 @@ export default function AdminDashboard() {
           problem={editingProblem}
           onClose={() => { setShowForm(false); setEditingProblem(null); }}
           onSaved={() => { setShowForm(false); setEditingProblem(null); fetchData(); }}
+        />
+      )}
+
+      {/* Contest Form Modal */}
+      {showContestForm && (
+        <AdminContestForm
+          contest={editingContest}
+          problems={problems}
+          onClose={() => { setShowContestForm(false); setEditingContest(null); }}
+          onSaved={() => { setShowContestForm(false); setEditingContest(null); fetchData(); }}
         />
       )}
 

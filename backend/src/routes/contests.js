@@ -1,0 +1,144 @@
+const express = require('express');
+const router = express.Router();
+const { PrismaClient } = require('@prisma/client');
+const { authenticateToken } = require('../middleware/auth');
+
+const prisma = new PrismaClient();
+
+// GET /api/contests - Get all contests
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const contests = await prisma.contest.findMany({
+      orderBy: { startTime: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        startTime: true,
+        endTime: true,
+        _count: {
+          select: { problems: true }
+        }
+      }
+    });
+    res.json(contests);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
+
+// GET /api/contests/:id - Get contest details
+router.get('/:id', authenticateToken, async (req, res) => {
+  try {
+    const contest = await prisma.contest.findUnique({
+      where: { id: req.params.id },
+      include: {
+        problems: {
+          select: {
+            id: true,
+            title: true,
+            difficulty: true,
+            category: true,
+            points: true,
+          }
+        }
+      }
+    });
+
+    if (!contest) {
+      return res.status(404).json({ error: 'Contest not found' });
+    }
+
+    // Hide problems if the contest hasn't started yet
+    const now = new Date();
+    if (new Date(contest.startTime) > now) {
+      contest.problems = [];
+    }
+
+    res.json(contest);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
+
+// GET /api/contests/:id/leaderboard - Get contest leaderboard
+router.get('/:id/leaderboard', authenticateToken, async (req, res) => {
+  try {
+    const contest = await prisma.contest.findUnique({
+      where: { id: req.params.id },
+      include: { problems: true }
+    });
+
+    if (!contest) {
+      return res.status(404).json({ error: 'Contest not found' });
+    }
+
+    // Get all successful submissions for the problems in this contest within the contest timeframe
+    const submissions = await prisma.submission.findMany({
+      where: {
+        problemId: { in: contest.problemIds },
+        passedTestCases: true,
+        timestamp: {
+          gte: contest.startTime,
+          lte: contest.endTime,
+        }
+      },
+      orderBy: { timestamp: 'asc' },
+      include: {
+        student: { select: { id: true, name: true, email: true } },
+        problem: { select: { id: true, points: true } }
+      }
+    });
+
+    // Calculate leaderboard
+    const participantMap = new Map();
+
+    submissions.forEach(sub => {
+      const studentId = sub.student.id;
+      if (!participantMap.has(studentId)) {
+        participantMap.set(studentId, {
+          user: sub.student,
+          points: 0,
+          timePenalty: 0,
+          solvedProblems: new Set(),
+        });
+      }
+
+      const participant = participantMap.get(studentId);
+
+      // Only count the first successful submission for each problem
+      if (!participant.solvedProblems.has(sub.problemId)) {
+        participant.solvedProblems.add(sub.problemId);
+        participant.points += sub.problem.points;
+        
+        // Time penalty in minutes from the start of the contest
+        const timeTakenMs = new Date(sub.timestamp) - new Date(contest.startTime);
+        participant.timePenalty += Math.floor(timeTakenMs / 60000); 
+      }
+    });
+
+    const leaderboard = Array.from(participantMap.values()).map(p => ({
+      user: p.user,
+      points: p.points,
+      timePenalty: p.timePenalty,
+      solvedCount: p.solvedProblems.size,
+    }));
+
+    // Sort by points (descending) and then time penalty (ascending)
+    leaderboard.sort((a, b) => {
+      if (b.points !== a.points) {
+        return b.points - a.points;
+      }
+      return a.timePenalty - b.timePenalty;
+    });
+
+    res.json(leaderboard);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
+
+module.exports = router;

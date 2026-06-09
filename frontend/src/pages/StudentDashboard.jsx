@@ -7,26 +7,37 @@ export default function StudentDashboard() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const [problems, setProblems] = useState([]);
+  const [contests, setContests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
+  const [viewMode, setViewMode] = useState('practice'); // 'practice' or 'contests'
 
   const handleLogout = () => {
     localStorage.clear();
     navigate('/login');
   };
 
-  const fetchProblems = () => {
-    api.get(`/problems?t=${Date.now()}`)
-      .then(({ data }) => setProblems(data))
-      .catch(() => setError('Failed to load problems.'))
-      .finally(() => setLoading(false));
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [probRes, contRes] = await Promise.allSettled([
+        api.get(`/problems?t=${Date.now()}`),
+        api.get(`/contests?t=${Date.now()}`)
+      ]);
+      if (probRes.status === 'fulfilled') setProblems(probRes.value.data);
+      if (contRes.status === 'fulfilled') setContests(contRes.value.data);
+    } catch (e) {
+      setError('Failed to load data.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetchProblems();
-    window.addEventListener('focus', fetchProblems);
-    return () => window.removeEventListener('focus', fetchProblems);
+    fetchData();
+    window.addEventListener('focus', fetchData);
+    return () => window.removeEventListener('focus', fetchData);
   }, []);
 
   if (loading) return (
@@ -51,9 +62,18 @@ export default function StudentDashboard() {
           <div className="flex items-center gap-2 md:gap-6">
             <h1 className="text-lg md:text-xl font-bold text-brand">Code Hunt</h1>
             <div className="hidden md:flex gap-4 text-sm text-muted">
-              <span className="text-foreground cursor-pointer font-medium">Problems</span>
-              <span className="hover:text-foreground cursor-pointer">Contests</span>
-              <span className="hover:text-foreground cursor-pointer">Discuss</span>
+              <span 
+                className={`cursor-pointer font-medium ${viewMode === 'practice' ? 'text-foreground border-b-2 border-brand' : 'hover:text-foreground'}`}
+                onClick={() => setViewMode('practice')}
+              >
+                Practice
+              </span>
+              <span 
+                className={`cursor-pointer font-medium ${viewMode === 'contests' ? 'text-foreground border-b-2 border-brand' : 'hover:text-foreground'}`}
+                onClick={() => setViewMode('contests')}
+              >
+                Contests
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -110,7 +130,7 @@ export default function StudentDashboard() {
                 </div>
               ) : error ? (
                 <div className="p-10 text-center text-red-400">{error}</div>
-              ) : (
+              ) : viewMode === 'practice' ? (
                 <div className="bg-surface">
                   {filteredProblems.map((p, i) => (
                     <div 
@@ -140,6 +160,58 @@ export default function StudentDashboard() {
                   ))}
                   {filteredProblems.length === 0 && (
                     <div className="p-8 text-center text-muted">No problems found for {activeCategory}.</div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-surface p-4 space-y-4">
+                  {contests.length === 0 ? (
+                    <div className="p-8 text-center text-muted">No contests available at the moment.</div>
+                  ) : (
+                    contests.map((c) => {
+                      const now = new Date();
+                      const start = new Date(c.startTime);
+                      const end = new Date(c.endTime);
+                      let status = 'Upcoming';
+                      let statusColor = 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
+                      
+                      if (now >= start && now <= end) {
+                        status = 'Active';
+                        statusColor = 'text-green-500 bg-green-500/10 border-green-500/20';
+                      } else if (now > end) {
+                        status = 'Past';
+                        statusColor = 'text-gray-500 bg-gray-500/10 border-gray-500/20';
+                      }
+
+                      return (
+                        <div key={c.id} className="lc-card p-5 border border-border hover:border-brand/50 transition-colors">
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <h3 className="text-lg font-bold text-foreground hover:text-brand cursor-pointer" onClick={() => navigate(`/contest/${c.id}`)}>
+                                {c.title}
+                              </h3>
+                              <p className="text-xs text-muted mt-1">
+                                {start.toLocaleString()} - {end.toLocaleString()}
+                              </p>
+                            </div>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${statusColor}`}>
+                              {status}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted mb-4">{c.description || 'No description available.'}</p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-foreground bg-background px-2 py-1 rounded">
+                              {c._count?.problems || 0} Challenges
+                            </span>
+                            <button 
+                              onClick={() => navigate(`/contest/${c.id}`)}
+                              className="text-xs bg-brand text-white px-4 py-1.5 rounded font-medium hover:bg-brand/80 transition-colors"
+                            >
+                              {status === 'Active' ? 'Enter Contest' : status === 'Past' ? 'View Results' : 'View Details'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               )}

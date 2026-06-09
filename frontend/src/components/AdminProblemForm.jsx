@@ -9,6 +9,7 @@ export default function AdminProblemForm({ problem, onClose, onSaved }) {
     category: 'All',
     functionName: 'Main',
     starterCode: '',
+    points: 100,
     testCases: [{ input: '', output: '' }]
   });
   const [loading, setLoading] = useState(false);
@@ -22,6 +23,7 @@ export default function AdminProblemForm({ problem, onClose, onSaved }) {
         category: problem.category || 'All',
         functionName: problem.functionName || 'Main',
         starterCode: problem.starterCode || '',
+        points: problem.points || 100,
         testCases: problem.testCases || [{ input: '', output: '' }]
       });
     }
@@ -176,16 +178,31 @@ export default function AdminProblemForm({ problem, onClose, onSaved }) {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm text-[var(--text-main)] font-medium mb-1.5">Main Class Name</label>
-            <input 
-              required 
-              className="lc-input font-mono" 
-              value={formData.functionName} 
-              onChange={e => setFormData({ ...formData, functionName: e.target.value })}
-              placeholder="e.g. Main"
-            />
-            <p className="text-[10px] text-[var(--text-muted)] mt-1">The student's code must define this public class (usually Main).</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-[var(--text-main)] font-medium mb-1.5">Main Class Name</label>
+              <input 
+                required 
+                className="lc-input font-mono" 
+                value={formData.functionName} 
+                onChange={e => setFormData({ ...formData, functionName: e.target.value })}
+                placeholder="e.g. Main"
+              />
+              <p className="text-[10px] text-[var(--text-muted)] mt-1">The student's code must define this public class (usually Main).</p>
+            </div>
+            <div>
+              <label className="block text-sm text-[var(--text-main)] font-medium mb-1.5">Points</label>
+              <input 
+                required 
+                type="number"
+                min="0"
+                className="lc-input font-mono" 
+                value={formData.points} 
+                onChange={e => setFormData({ ...formData, points: parseInt(e.target.value) || 0 })}
+                placeholder="100"
+              />
+              <p className="text-[10px] text-[var(--text-muted)] mt-1">Points awarded for solving this problem.</p>
+            </div>
           </div>
 
           <div>

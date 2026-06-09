@@ -27,9 +27,25 @@ model Problem {
   testCases           String
   functionName        String                @default("solution")
   starterCode         String                @default("")
+  points              Int                   @default(100)
   createdAt           DateTime              @default(now())
+  
+  contestIds          String[]              @db.ObjectId
+  contests            Contest[]             @relation(fields: [contestIds], references: [id])
+  
   submissions         Submission[]
   distractionSummaries DistractionSummary[]
+}
+
+model Contest {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
+  startTime   DateTime
+  endTime     DateTime
+  problemIds  String[]  @db.ObjectId
+  problems    Problem[] @relation(fields: [problemIds], references: [id])
+  createdAt   DateTime  @default(now())
 }
 
 model Submission {
