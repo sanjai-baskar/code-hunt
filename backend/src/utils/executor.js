@@ -50,13 +50,15 @@ async function runCode(code, testCases, functionName = 'Main', language = 'java'
 
       // Status 3 is "Accepted" in Judge0
       if (data.status?.id !== 3) {
+        const errorMsg = compileOutput || stderr || message || `Error: ${data.status?.description || 'Unknown Error'}`;
         results.push({
           input: testCase.input,
           expected,
-          actual: compileOutput || stderr || message || `Error: ${data.status?.description || 'Unknown Error'}`,
+          actual: errorMsg,
           passed: false,
-          logs: [],
-          error: compileOutput || stderr || message
+          logs: errorMsg ? errorMsg.split('\n').filter(Boolean) : [],
+          error: errorMsg,
+          time: data.time ? parseFloat(data.time) * 1000 : null,
         });
       } else {
         results.push({
@@ -64,18 +66,21 @@ async function runCode(code, testCases, functionName = 'Main', language = 'java'
           expected,
           actual: stdout,
           passed: stdout === expected,
-          logs: [],
+          logs: stdout ? stdout.split('\n').filter(Boolean) : [],
+          time: data.time ? parseFloat(data.time) * 1000 : null,
         });
       }
     } catch (apiError) {
       console.error('Judge0 API Error:', apiError.response?.data || apiError.message);
+      const errMsg = `Cloud Execution Error: ${apiError.message}`;
       results.push({
         input: testCase.input,
         expected: String(testCase.output).trim(),
-        actual: `Cloud Execution Error: ${apiError.message}`,
+        actual: errMsg,
         passed: false,
-        logs: [],
-        error: apiError.message
+        logs: [errMsg],
+        error: apiError.message,
+        time: null,
       });
     }
   }

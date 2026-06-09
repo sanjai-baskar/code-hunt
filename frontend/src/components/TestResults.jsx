@@ -8,14 +8,14 @@ export default function TestResults({ results, summary }) {
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-sm font-semibold text-foreground">🚀 Execution Results</h3>
         <span className="text-xs font-mono bg-surface px-2 py-1 rounded border border-border text-foreground">
-          {summary.passed} / {summary.total} Passed
+          {summary?.passed ?? 0} / {summary?.total ?? 0} Passed
         </span>
       </div>
 
       <div className="space-y-3">
         {results.map((res, idx) => (
-          <div 
-            key={idx} 
+          <div
+            key={idx}
             className={`p-3 rounded-lg border text-sm ${
               res.passed ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20'
             }`}
@@ -29,26 +29,31 @@ export default function TestResults({ results, summary }) {
             <div className="grid grid-cols-2 gap-4 font-mono text-xs">
               <div>
                 <span className="block text-[10px] opacity-70 mb-1">Input:</span>
-                <code className="text-foreground bg-black/20 dark:bg-black/50 px-1.5 py-0.5 rounded">{res.input}</code>
-                <p className="mt-2 text-[9px] text-muted italic">
-                  Exec Time: {res.executionTime}ms
-                </p>
+                <code className="text-foreground bg-black/20 dark:bg-black/50 px-1.5 py-0.5 rounded whitespace-pre-wrap break-all">{res.input || '(none)'}</code>
+                {res.time != null && (
+                  <p className="mt-2 text-[9px] text-muted italic">
+                    Exec Time: {Math.round(res.time)}ms
+                  </p>
+                )}
               </div>
               <div>
-                <span className="block text-[10px] opacity-70 mb-1">Output:</span>
-                <code className={res.passed ? 'text-green-500' : 'text-red-500'}>{res.output}</code>
+                <span className="block text-[10px] opacity-70 mb-1">Your Output:</span>
+                <code className={`whitespace-pre-wrap break-all ${res.passed ? 'text-green-500' : 'text-red-500'}`}>
+                  {res.actual || '(no output)'}
+                </code>
                 {!res.passed && (
                   <div className="mt-1">
                     <span className="block text-[10px] opacity-70 mt-2 mb-1">Expected:</span>
-                    <code className="text-green-500">{res.expected}</code>
+                    <code className="text-green-500 whitespace-pre-wrap break-all">{res.expected}</code>
                   </div>
                 )}
               </div>
             </div>
             {res.error && (
-              <p className="mt-4 text-[10px] text-center text-muted italic">
-                Reason: {res.error}
-              </p>
+              <div className="mt-3 p-2 bg-red-500/10 rounded border border-red-500/20">
+                <p className="text-[10px] font-bold text-red-400 mb-1">Error / Compile Output:</p>
+                <pre className="text-[10px] text-red-300 whitespace-pre-wrap break-all">{res.error}</pre>
+              </div>
             )}
           </div>
         ))}

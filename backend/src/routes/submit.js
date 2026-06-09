@@ -39,7 +39,7 @@ router.post('/', authenticateToken, async (req, res) => {
       submission,
       results,
       allPassed,
-      summary: `${passedCount}/${testCases.length} test cases passed`,
+      summary: { passed: passedCount, total: testCases.length },
     });
   } catch (err) {
     console.error('Submit error:', err);

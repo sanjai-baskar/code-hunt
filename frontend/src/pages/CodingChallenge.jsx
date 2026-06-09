@@ -335,12 +335,28 @@ export default function CodingChallenge() {
             <CodeEditor value={code} onChange={setCode} language={language} />
           </div>
 
-          {/* Bottom Panel (optional console output) */}
+          {/* Bottom Panel — Console output */}
           {testResults && (
-            <div className="h-[30%] bg-surface rounded-lg border border-border p-4 overflow-y-auto">
-              <h3 className="text-xs font-bold text-muted uppercase mb-3">Console</h3>
-              <div className="font-mono text-xs text-foreground space-y-1">
-                {testResults.results[0]?.logs.map((log, i) => <div key={i}>{log}</div>)}
+            <div className="h-[30%] bg-[#0d1117] rounded-lg border border-border p-4 overflow-y-auto font-mono text-xs">
+              <h3 className="text-[10px] font-bold text-muted uppercase mb-3 tracking-wider">Console Output</h3>
+              <div className="space-y-3">
+                {testResults.results.map((res, idx) => (
+                  <div key={idx}>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider ${res.passed ? 'text-green-400' : 'text-red-400'}`}>
+                      {'▶ Test Case #'}{idx + 1} {res.passed ? '✓' : '✗'}
+                    </span>
+                    {res.actual ? (
+                      <pre className={`mt-1 whitespace-pre-wrap break-all leading-relaxed ${res.error ? 'text-red-300' : 'text-green-300'}`}>
+                        {res.actual}
+                      </pre>
+                    ) : (
+                      <p className="text-muted italic mt-1">(no output)</p>
+                    )}
+                    {res.time != null && (
+                      <p className="text-[9px] text-muted mt-0.5">Exec: {Math.round(res.time)}ms</p>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}
