@@ -42,7 +42,7 @@
       "destination": "https://code-hunt-3wgp.onrender.com/api/logs"
     },
     {
-      "source": "/(login|signup|student|admin|challenge/.*)",
+      "source": "/(login|signup|student|admin|challenge/.*|contest/.*)",
       "destination": "/public/index.html"
     },
     {
