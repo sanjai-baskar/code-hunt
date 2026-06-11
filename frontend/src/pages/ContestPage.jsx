@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import Leaderboard from '../components/Leaderboard';
@@ -10,9 +10,20 @@ export default function ContestPage() {
   const [contest, setContest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('problems'); // 'problems' or 'leaderboard'
+  const [activeTab, setActiveTab] = useState('problems');
   const [timeRemaining, setTimeRemaining] = useState('');
   const [status, setStatus] = useState('Upcoming');
+  // Map of problemId -> { passedCount, totalCount, passedTestCases }
+  const [progress, setProgress] = useState({});
+
+  const fetchProgress = useCallback(async () => {
+    try {
+      const res = await api.get(`/contests/${id}/my-progress`);
+      setProgress(res.data);
+    } catch {
+      // Non-critical — silently ignore
+    }
+  }, [id]);
 
   useEffect(() => {
     const fetchContest = async () => {
@@ -26,7 +37,14 @@ export default function ContestPage() {
       }
     };
     fetchContest();
-  }, [id]);
+    fetchProgress();
+  }, [id, fetchProgress]);
+
+  // Re-fetch progress whenever the user returns to this tab (e.g. after submitting)
+  useEffect(() => {
+    window.addEventListener('focus', fetchProgress);
+    return () => window.removeEventListener('focus', fetchProgress);
+  }, [fetchProgress]);
 
   useEffect(() => {
     if (!contest) return;
@@ -80,7 +98,7 @@ export default function ContestPage() {
       <nav className="lc-navbar px-4 md:px-6 bg-surface border-b border-border">
         <div className="max-w-6xl mx-auto w-full flex items-center justify-between">
           <div className="flex items-center gap-2 md:gap-6">
-            <button onClick={() => navigate('/dashboard')} className="text-muted hover:text-foreground mr-2">← Back</button>
+            <button onClick={() => navigate('/student')} className="text-muted hover:text-foreground mr-2">← Back</button>
             <h1 className="text-lg md:text-xl font-bold text-foreground">{contest.title}</h1>
           </div>
           <div className="text-right hidden sm:block">
@@ -95,6 +113,9 @@ export default function ContestPage() {
           <div>
             <h2 className="text-2xl font-bold text-foreground mb-2">{contest.title}</h2>
             <p className="text-sm text-muted">{contest.description}</p>
+            <p className="text-xs text-muted mt-2">
+              {new Date(contest.startTime).toLocaleString()} — {new Date(contest.endTime).toLocaleString()}
+            </p>
           </div>
           <div className="text-center md:text-right bg-background p-4 rounded-lg border border-border min-w-[200px]">
             <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${
@@ -130,29 +151,65 @@ export default function ContestPage() {
               </div>
             ) : (
               <div className="bg-surface border border-border rounded-xl overflow-hidden">
+                {/* Past contest notice */}
+                {status === 'Past' && (
+                  <div className="bg-gray-500/10 border-b border-border px-5 py-3 text-xs text-muted flex items-center gap-2">
+                    <span>🔓</span>
+                    <span>This contest has ended. Problems are open for review.</span>
+                  </div>
+                )}
+
                 {contest.problems && contest.problems.length > 0 ? (
-                  contest.problems.map((p, i) => (
-                    <div 
-                      key={p.id} 
-                      className="problem-row border-b border-border hover:bg-background/50 cursor-pointer p-4 flex items-center justify-between"
-                      onClick={() => navigate(`/challenge/${p.id}`)}
-                    >
-                      <div className="flex items-center gap-4">
-                        <span className="text-muted font-bold w-6">{String.fromCharCode(65 + i)}</span>
-                        <span className="text-base text-foreground hover:text-brand font-medium transition-colors">
-                          {p.title}
-                        </span>
+                  contest.problems.map((p, i) => {
+                    const sub = progress[p.id];
+                    const hasSub = !!sub;
+                    const allPassed = sub?.passedTestCases;
+                    const passedCount = sub?.passedCount ?? 0;
+                    const totalCount = sub?.totalCount ?? 0;
+
+                    return (
+                      <div
+                        key={p.id}
+                        className={`border-b border-border hover:bg-background/50 cursor-pointer p-4 flex items-center justify-between transition-colors ${allPassed ? 'bg-green-500/5' : ''}`}
+                        onClick={() => navigate(`/challenge/${p.id}`)}
+                      >
+                        <div className="flex items-center gap-4">
+                          {/* Problem letter */}
+                          <span className="text-muted font-bold w-6">{String.fromCharCode(65 + i)}</span>
+
+                          {/* Solved checkmark */}
+                          {allPassed && (
+                            <span className="text-green-500 text-sm">✓</span>
+                          )}
+
+                          <span className="text-base text-foreground hover:text-brand font-medium transition-colors">
+                            {p.title}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-3 flex-wrap justify-end">
+                          {/* Test case progress badge */}
+                          {hasSub && (
+                            <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
+                              allPassed
+                                ? 'text-green-500 bg-green-500/10 border-green-500/30'
+                                : 'text-yellow-500 bg-yellow-500/10 border-yellow-500/30'
+                            }`}>
+                              {passedCount}/{totalCount} tests
+                            </span>
+                          )}
+
+                          <span className={`badge-${p.difficulty.toLowerCase()} text-xs`}>
+                            {p.difficulty}
+                          </span>
+
+                          <span className="text-xs font-bold text-brand bg-brand/10 px-2.5 py-1 rounded-full border border-brand/20">
+                            {p.points} Pts
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-6">
-                        <span className={`badge-${p.difficulty.toLowerCase()} text-xs`}>
-                          {p.difficulty}
-                        </span>
-                        <span className="text-xs font-bold text-brand bg-brand/10 px-2.5 py-1 rounded-full border border-brand/20">
-                          {p.points} Pts
-                        </span>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="p-8 text-center text-muted">No problems available for this contest.</div>
                 )}

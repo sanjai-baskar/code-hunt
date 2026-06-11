@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../utils/prisma');
 const { authenticateToken } = require('../middleware/auth');
 const { runCode } = require('../utils/executor');
 
-const prisma = new PrismaClient();
+
 
 // POST /api/run — execute code against all test cases (no DB write)
 router.post('/', authenticateToken, async (req, res) => {

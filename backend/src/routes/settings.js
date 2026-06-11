@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../utils/prisma');
 
-const prisma = new PrismaClient();
+
 
 // GET /api/settings/webcam — public endpoint (no auth needed) for students to check webcam status
 router.get('/webcam', async (req, res) => {

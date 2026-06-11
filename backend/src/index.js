@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const compression = require('compression');
 const fs = require('fs');
 
 const authRoutes = require('./routes/auth');
@@ -18,6 +19,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
+app.use(compression()); // gzip all responses — reduces bandwidth under concurrent load
 app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 

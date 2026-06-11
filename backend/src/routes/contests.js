@@ -1,9 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../utils/prisma');
 const { authenticateToken } = require('../middleware/auth');
-
-const prisma = new PrismaClient();
 
 // GET /api/contests - Get all contests
 router.get('/', authenticateToken, async (req, res) => {
@@ -50,13 +48,58 @@ router.get('/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Contest not found' });
     }
 
-    // Hide problems if the contest hasn't started yet
+    // Only hide problems if the contest hasn't started yet
+    // Past contests remain fully visible so students can review solutions
     const now = new Date();
     if (new Date(contest.startTime) > now) {
       contest.problems = [];
     }
 
     res.json(contest);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
+
+// GET /api/contests/:id/my-progress - Get current student's best submission per problem
+router.get('/:id/my-progress', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.user.id;
+
+    const contest = await prisma.contest.findUnique({
+      where: { id: req.params.id },
+      select: { problemIds: true },
+    });
+
+    if (!contest) return res.status(404).json({ error: 'Contest not found' });
+
+    // Get all submissions for this student for the problems in this contest
+    const submissions = await prisma.submission.findMany({
+      where: {
+        studentId,
+        problemId: { in: contest.problemIds },
+      },
+      orderBy: { timestamp: 'desc' },
+      select: {
+        problemId: true,
+        passedTestCases: true,
+        passedCount: true,
+        totalCount: true,
+        timestamp: true,
+      },
+    });
+
+    // Keep only the best submission per problem (most passed test cases)
+    const bestByProblem = {};
+    for (const sub of submissions) {
+      const existing = bestByProblem[sub.problemId];
+      if (!existing || sub.passedCount > existing.passedCount) {
+        bestByProblem[sub.problemId] = sub;
+      }
+    }
+
+    res.json(bestByProblem);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error', details: err.message });
@@ -112,10 +155,10 @@ router.get('/:id/leaderboard', authenticateToken, async (req, res) => {
       if (!participant.solvedProblems.has(sub.problemId)) {
         participant.solvedProblems.add(sub.problemId);
         participant.points += sub.problem.points;
-        
+
         // Time penalty in minutes from the start of the contest
         const timeTakenMs = new Date(sub.timestamp) - new Date(contest.startTime);
-        participant.timePenalty += Math.floor(timeTakenMs / 60000); 
+        participant.timePenalty += Math.floor(timeTakenMs / 60000);
       }
     });
 
@@ -128,9 +171,7 @@ router.get('/:id/leaderboard', authenticateToken, async (req, res) => {
 
     // Sort by points (descending) and then time penalty (ascending)
     leaderboard.sort((a, b) => {
-      if (b.points !== a.points) {
-        return b.points - a.points;
-      }
+      if (b.points !== a.points) return b.points - a.points;
       return a.timePenalty - b.timePenalty;
     });
 

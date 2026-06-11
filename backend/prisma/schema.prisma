@@ -55,6 +55,8 @@ model Submission {
   code             String
   output           String
   passedTestCases  Boolean  @default(false)
+  passedCount      Int      @default(0)
+  totalCount       Int      @default(0)
   distractionCount Int      @default(0)
   timestamp        DateTime @default(now())
   student          User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
