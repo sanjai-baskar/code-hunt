@@ -80,6 +80,8 @@ export default function ContestPage() {
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
+  const contestAvailable = status === 'Active';
+
   if (loading) return (
     <div className="h-screen bg-background flex items-center justify-center">
       <div className="w-10 h-10 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
@@ -153,9 +155,14 @@ export default function ContestPage() {
               <div className="bg-surface border border-border rounded-xl overflow-hidden">
                 {/* Past contest notice */}
                 {status === 'Past' && (
-                  <div className="bg-gray-500/10 border-b border-border px-5 py-3 text-xs text-muted flex items-center gap-2">
-                    <span>🔓</span>
-                    <span>This contest has ended. Problems are open for review.</span>
+                  <div className="bg-gray-500/10 border-b border-border px-5 py-3 text-xs text-muted flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span>🔓</span>
+                      <span>This contest has ended. You can review the problem statements, but you may not enter or submit new solutions.</span>
+                    </div>
+                    <div className="text-[11px] text-gray-500">
+                      Click a challenge to view the statement only; coding attempts are disabled once the contest has ended.
+                    </div>
                   </div>
                 )}
 
@@ -170,8 +177,11 @@ export default function ContestPage() {
                     return (
                       <div
                         key={p.id}
-                        className={`border-b border-border hover:bg-background/50 cursor-pointer p-4 flex items-center justify-between transition-colors ${allPassed ? 'bg-green-500/5' : ''}`}
-                        onClick={() => navigate(`/challenge/${p.id}`)}
+                        className={`border-b border-border ${contestAvailable ? 'hover:bg-background/50 cursor-pointer' : 'bg-gray-100'} p-4 flex items-center justify-between transition-colors ${allPassed ? 'bg-green-500/5' : ''}`}
+                        onClick={() => {
+                          if (!contestAvailable) return;
+                          navigate(`/challenge/${p.id}`);
+                        }}
                       >
                         <div className="flex items-center gap-4">
                           {/* Problem letter */}
@@ -182,7 +192,7 @@ export default function ContestPage() {
                             <span className="text-green-500 text-sm">✓</span>
                           )}
 
-                          <span className="text-base text-foreground hover:text-brand font-medium transition-colors">
+                          <span className={`text-base text-foreground font-medium transition-colors ${contestAvailable ? 'hover:text-brand' : 'text-gray-500'}`}>
                             {p.title}
                           </span>
                         </div>

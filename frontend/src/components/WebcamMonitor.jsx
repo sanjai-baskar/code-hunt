@@ -4,7 +4,7 @@ import { useObjectDetection } from '../hooks/useObjectDetection';
 import { useFaceDetection } from '../hooks/useFaceDetection';
 import { useFaceMonitor } from '../hooks/useFaceMonitor';
 
-export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
+export default function WebcamMonitor({ onDistraction, getCode, problemId, onCameraStatusChange }) {
   const canvasRef = useRef(null);
   const { videoRef, streamReady, error: camError } = useWebcam();
   const lastObjects = useObjectDetection(videoRef, canvasRef, streamReady);
@@ -24,6 +24,12 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId }) {
 
   const [status, setStatus] = useState('Initializing...');
   const [lastEvent, setLastEvent] = useState(null);
+
+  useEffect(() => {
+    if (onCameraStatusChange) {
+      onCameraStatusChange(streamReady, camError);
+    }
+  }, [streamReady, camError, onCameraStatusChange]);
 
   // Face detection results handler
   const handleFaceResults = useCallback((results) => {

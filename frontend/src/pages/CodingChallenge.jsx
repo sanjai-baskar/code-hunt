@@ -29,6 +29,8 @@ export default function CodingChallenge() {
   const [isDisqualified, setIsDisqualified] = useState(false);
   const [language, setLanguage] = useState('java');
   const [webcamEnabled, setWebcamEnabled] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [cameraError, setCameraError] = useState(null);
   const codeRef = useRef(code);
   const getCode = useCallback(() => codeRef.current, []);
 
@@ -245,10 +247,41 @@ export default function CodingChallenge() {
             </p>
             <button
               onClick={startChallenge}
-              className="lc-btn-primary w-full py-4 text-lg font-bold shadow-[0_0_20px_rgba(255,161,22,0.3)]"
+              disabled={webcamEnabled && !cameraReady}
+              className="lc-btn-primary w-full py-4 text-lg font-bold shadow-[0_0_20px_rgba(255,161,22,0.3)] disabled:opacity-50"
             >
-              Enter Exam Arena
+              {webcamEnabled && !cameraReady ? 'Enable Camera to Enter' : 'Enter Exam Arena'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {webcamEnabled && !cameraReady && (
+        <div className="fixed inset-0 z-[20000] bg-background/95 backdrop-blur flex items-center justify-center p-6 text-center">
+          <div className="max-w-xl w-full lc-card p-10 border-2 border-red-500 bg-surface shadow-xl">
+            <h2 className="text-3xl font-black text-foreground mb-4">Camera Required</h2>
+            <p className="text-muted text-sm mb-6 leading-relaxed">
+              This exam requires your webcam to be enabled. Please allow camera access in your browser and refresh the page.
+            </p>
+            {cameraError ? (
+              <p className="text-sm text-red-500 mb-6">{cameraError}</p>
+            ) : (
+              <p className="text-sm text-gray-500 mb-6">Waiting for camera permission...</p>
+            )}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                onClick={() => window.location.reload()}
+                className="lc-btn-secondary px-5 py-3 rounded font-bold"
+              >
+                Retry Camera Access
+              </button>
+              <button
+                onClick={() => navigate('/student')}
+                className="px-5 py-3 rounded font-bold bg-red-600 text-white hover:bg-red-500 transition-colors"
+              >
+                Return to Dashboard
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -376,6 +409,10 @@ export default function CodingChallenge() {
           onDistraction={handleDistraction}
           getCode={getCode}
           problemId={id}
+          onCameraStatusChange={(ready, error) => {
+            setCameraReady(ready);
+            setCameraError(error);
+          }}
         />
       )}
       <Toast toasts={toasts} />
