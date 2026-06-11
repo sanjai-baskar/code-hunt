@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
 import * as tf from '@tensorflow/tfjs';
+import '@tensorflow/tfjs-backend-wasm';
 
 const RESTRICTED = ['cell phone', 'laptop', 'tablet', 'book', 'remote'];
 
@@ -12,8 +13,19 @@ export function useObjectDetection(videoRef, canvasRef, enabled) {
     let cancelled = false;
     async function load() {
       if (!enabled) return;
+        // Try WebGL, then WASM, then CPU backends
+        const backends = ['webgl', 'wasm', 'cpu'];
+        for (const b of backends) {
+          try {
+            await tf.setBackend(b);
+            await tf.ready();
+            console.info(`TensorFlow.js backend set to ${b}`);
+            break; // success
+          } catch (e) {
+            console.warn(`Backend ${b} unavailable, trying next:`, e);
+          }
+        }
       try {
-        await tf.ready();
         modelRef.current = await cocoSsd.load();
         if (!cancelled) console.log('COCO-SSD loaded');
       } catch (err) {
