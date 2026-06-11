@@ -235,16 +235,18 @@ export default function AdminDashboard() {
             <div className="bg-surface border-border border rounded-xl overflow-hidden">
               {contests.map((c) => (
                 <div key={c.id} className="p-4 border-b border-border flex items-center justify-between hover:bg-background/50 transition-colors">
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-foreground font-bold mb-1">{c.title}</p>
-                    <p className="text-xs text-muted">
+                    <p className="text-xs text-muted mb-2">
                       {new Date(c.startTime).toLocaleString()} - {new Date(c.endTime).toLocaleString()}
                     </p>
-                    <p className="text-xs text-brand font-medium mt-1">
+                    <p className="text-sm text-muted mb-2 line-clamp-2">{c.description || 'No description available.'}</p>
+                    <p className="text-xs text-brand font-medium">
                       {c._count?.problems || 0} Problems
                     </p>
                   </div>
                   <div className="flex gap-4">
+                    <button onClick={() => { setEditingContest(c); setShowContestForm(true); }} className="text-blue-500 hover:text-blue-400 text-sm font-medium transition-colors">Edit</button>
                     <button onClick={() => deleteContest(c.id)} className="text-red-500 hover:text-red-400 text-sm font-medium transition-colors">Delete</button>
                   </div>
                 </div>
