@@ -106,9 +106,14 @@ router.get('/:id/my-progress', authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/contests/:id/leaderboard - Get contest leaderboard
+// GET /api/contests/:id/leaderboard - Get contest leaderboard (admin only)
 router.get('/:id/leaderboard', authenticateToken, async (req, res) => {
   try {
+    // Admin role check
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Only admins can view leaderboard' });
+    }
+
     const contest = await prisma.contest.findUnique({
       where: { id: req.params.id },
       include: { problems: true }
@@ -118,11 +123,10 @@ router.get('/:id/leaderboard', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Contest not found' });
     }
 
-    // Get all successful submissions for the problems in this contest within the contest timeframe
+    // Get all submissions for the problems in this contest within the contest timeframe
     const submissions = await prisma.submission.findMany({
       where: {
         problemId: { in: contest.problemIds },
-        passedTestCases: true,
         timestamp: {
           gte: contest.startTime,
           lte: contest.endTime,
@@ -135,7 +139,7 @@ router.get('/:id/leaderboard', authenticateToken, async (req, res) => {
       }
     });
 
-    // Calculate leaderboard
+    // Calculate leaderboard with detailed metrics
     const participantMap = new Map();
 
     submissions.forEach(sub => {
@@ -146,19 +150,31 @@ router.get('/:id/leaderboard', authenticateToken, async (req, res) => {
           points: 0,
           timePenalty: 0,
           solvedProblems: new Set(),
+          totalTestCasesPassed: 0,
+          firstSolveTime: null,
         });
       }
 
       const participant = participantMap.get(studentId);
 
-      // Only count the first successful submission for each problem
-      if (!participant.solvedProblems.has(sub.problemId)) {
+      // Count test cases passed
+      if (sub.passedCount) {
+        participant.totalTestCasesPassed += sub.passedCount;
+      }
+
+      // Only count points for the first successful submission for each problem
+      if (sub.passedTestCases && !participant.solvedProblems.has(sub.problemId)) {
         participant.solvedProblems.add(sub.problemId);
         participant.points += sub.problem.points;
 
         // Time penalty in minutes from the start of the contest
         const timeTakenMs = new Date(sub.timestamp) - new Date(contest.startTime);
         participant.timePenalty += Math.floor(timeTakenMs / 60000);
+        
+        // Track first solve time
+        if (!participant.firstSolveTime) {
+          participant.firstSolveTime = new Date(sub.timestamp);
+        }
       }
     });
 
@@ -167,6 +183,8 @@ router.get('/:id/leaderboard', authenticateToken, async (req, res) => {
       points: p.points,
       timePenalty: p.timePenalty,
       solvedCount: p.solvedProblems.size,
+      totalTestCasesPassed: p.totalTestCasesPassed,
+      firstSolveTime: p.firstSolveTime,
     }));
 
     // Sort by points (descending) and then time penalty (ascending)

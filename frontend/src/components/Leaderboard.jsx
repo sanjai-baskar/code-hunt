@@ -27,6 +27,16 @@ export default function Leaderboard({ contestId }) {
   if (loading) return <div className="text-center p-8 text-muted">Loading Leaderboard...</div>;
   if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
 
+  const formatTime = (ms) => {
+    if (!ms) return '-';
+    const minutes = Math.floor(ms / 60000);
+    const hours = Math.floor(minutes / 60);
+    if (hours > 0) {
+      return `${hours}h ${minutes % 60}m`;
+    }
+    return `${minutes}m`;
+  };
+
   return (
     <div className="bg-surface border-border border rounded-xl overflow-hidden">
       <div className="overflow-x-auto">
@@ -36,15 +46,17 @@ export default function Leaderboard({ contestId }) {
               <th className="px-6 py-4 font-bold text-muted w-16 text-center">Rank</th>
               <th className="px-6 py-4 font-bold text-muted">Participant</th>
               <th className="px-6 py-4 font-bold text-muted text-center">Solved</th>
+              <th className="px-6 py-4 font-bold text-muted text-center">Test Cases</th>
               <th className="px-6 py-4 font-bold text-brand text-right">Points</th>
+              <th className="px-6 py-4 font-bold text-muted text-right">Time Taken</th>
               <th className="px-6 py-4 font-bold text-muted text-right">Penalty (min)</th>
             </tr>
           </thead>
           <tbody>
             {leaderboard.length === 0 ? (
               <tr>
-                <td colSpan="5" className="px-6 py-8 text-center text-muted">
-                  No successful submissions yet.
+                <td colSpan="7" className="px-6 py-8 text-center text-muted">
+                  No submissions yet.
                 </td>
               </tr>
             ) : (
@@ -60,8 +72,14 @@ export default function Leaderboard({ contestId }) {
                   <td className="px-6 py-4 text-center text-muted font-medium">
                     {entry.solvedCount}
                   </td>
+                  <td className="px-6 py-4 text-center text-muted font-medium">
+                    {entry.totalTestCasesPassed}
+                  </td>
                   <td className="px-6 py-4 text-right font-bold text-brand">
                     {entry.points}
+                  </td>
+                  <td className="px-6 py-4 text-right text-muted font-mono">
+                    {formatTime(entry.firstSolveTime ? new Date(entry.firstSolveTime).getTime() : 0)}
                   </td>
                   <td className="px-6 py-4 text-right text-muted font-mono">
                     {entry.timePenalty}
@@ -75,3 +93,4 @@ export default function Leaderboard({ contestId }) {
     </div>
   );
 }
+

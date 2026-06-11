@@ -7,6 +7,7 @@ export default function ContestPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isAdmin = user.role === 'admin';
   const [contest, setContest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -131,7 +132,7 @@ export default function ContestPage() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6">
-          {['problems', 'leaderboard'].map((tab) => (
+          {['problems', ...(isAdmin ? ['leaderboard'] : [])].map((tab) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className={`px-6 py-2.5 rounded-lg text-sm font-bold capitalize transition-all border ${activeTab === tab
                 ? 'bg-brand/10 text-brand border-brand/30'
