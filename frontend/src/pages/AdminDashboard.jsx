@@ -5,6 +5,7 @@ import api from '../api/client';
 import AdminProblemForm from '../components/AdminProblemForm';
 import AdminContestForm from '../components/AdminContestForm';
 import StudentLogsModal from '../components/StudentLogsModal';
+import Leaderboard from '../components/Leaderboard';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ export default function AdminDashboard() {
   const [editingProblem, setEditingProblem] = useState(null);
   const [editingContest, setEditingContest] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedLeaderboardContest, setSelectedLeaderboardContest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [webcamEnabled, setWebcamEnabled] = useState(true);
   const [webcamToggling, setWebcamToggling] = useState(false);
@@ -174,13 +176,13 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6">
-          {['problems', 'contests', 'students'].map((tab) => (
+          {['problems', 'contests', 'students', 'leaderboard'].map((tab) => (
             <button key={tab} id={`tab-${tab}`} onClick={() => setActiveTab(tab)}
               className={`px-5 py-2 rounded-lg text-sm font-medium capitalize transition-all border ${activeTab === tab
                 ? 'bg-brand/10 text-brand border-brand/30'
                 : 'bg-surface text-muted border-border hover:bg-background'
               }`}>
-              {tab === 'problems' ? '📝 Problems' : tab === 'contests' ? '🏆 Contests' : '👥 Students'}
+              {tab === 'problems' ? '📝 Problems' : tab === 'contests' ? '🏆 Contests' : tab === 'students' ? '👥 Students' : '🏅 Leaderboard'}
             </button>
           ))}
         </div>
@@ -307,6 +309,48 @@ export default function AdminDashboard() {
                 <div className="p-8 text-center text-muted lc-card bg-surface border-border">No students registered yet.</div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Leaderboard Tab */}
+        {activeTab === 'leaderboard' && (
+          <div>
+            <h2 className="text-lg font-semibold text-foreground mb-4">Contest Leaderboards</h2>
+            
+            <div className="mb-6">
+              <p className="text-sm text-muted mb-3">Select a contest to view leaderboard:</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {contests.length === 0 ? (
+                  <p className="text-sm text-muted col-span-full">No contests available.</p>
+                ) : (
+                  contests.map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => setSelectedLeaderboardContest(c.id)}
+                      className={`p-4 text-left rounded-lg border transition-all ${
+                        selectedLeaderboardContest === c.id
+                          ? 'border-brand bg-brand/10'
+                          : 'border-border bg-surface hover:border-brand/50'
+                      }`}
+                    >
+                      <p className="font-bold text-foreground">{c.title}</p>
+                      <p className="text-xs text-muted mt-1">
+                        {new Date(c.startTime).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-brand font-medium mt-1">
+                        {c._count?.problems || 0} Problems
+                      </p>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {selectedLeaderboardContest && (
+              <div>
+                <Leaderboard contestId={selectedLeaderboardContest} />
+              </div>
+            )}
           </div>
         )}
       </div>
