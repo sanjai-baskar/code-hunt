@@ -12,3 +12,14 @@ services:
         value: codehunt-super-secret-jwt-key-2024-production-ready
       - key: NODE_ENV
         value: production
+
+  # Cron job to keep the backend service warm (prevents free tier from spinning down)
+  - type: cron
+    name: code-hunt-uptime-ping
+    runtime: node
+    buildCommand: npm install
+    startCommand: node -e "setInterval(() => { require('https').get('https://code-hunt-backend-XXXX.onrender.com/api/health', r => console.log('ping')); }, 300000);"
+    schedule: "0 * * * *"
+    envVars:
+      - key: NODE_ENV
+        value: production
