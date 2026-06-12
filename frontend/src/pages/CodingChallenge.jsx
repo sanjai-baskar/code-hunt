@@ -218,16 +218,14 @@ export default function CodingChallenge() {
       const next = prev + 1;
       let label;
       if (direction === 'away') label = '❌ Face not detected';
-      else if (direction === 'reading-zone') label = '📖 Reading detected (too long)';
-      else if (direction === 'down-extreme') label = '🚨 Looking DOWN - Suspicious Device Use';
-      else if (direction === 'left-extreme' || direction === 'right-extreme') 
-        label = '⚠️ Head turned too far away';
-      else if (direction === 'up-extreme') label = '⚠️ Head tilted too far up';
-      else if (direction === 'talking') label = '🔊 Voice/Talking detected';
-      else if (direction === 'suspicious-pose') label = '⚠️ Suspicious head movement';
-      else if (direction.startsWith('object-')) label = `🚫 Forbidden object: ${direction.replace('object-', '').replace('-', ' ')}`;
-      else if (direction === 'multiple-faces') label = '👥 Multiple faces detected!';
-      else label = `⚠️ Distraction: ${direction}`;
+      else if (direction === 'extreme-left' || direction === 'extreme-right') 
+        label = '⚠️ Head turned too far - looking behind you';
+      else if (direction === 'extreme-down') label = '🚨 Looking down - checking external materials?';
+      else if (direction === 'extreme-up') label = '⚠️ Looking up - checking wall/ceiling?';
+      else if (direction === 'extreme-position-warmup') label = '⚠️ Extreme head position detected';
+      else if (direction.startsWith('object-')) label = `🚫 CHEATING: ${direction.replace('object-', '').replace('-', ' ')} detected!`;
+      else if (direction === 'multiple-faces') label = '👥 CHEATING: Multiple people in frame!';
+      else label = `⚠️ Violation: ${direction}`;
       addToast(label, 'warn');
       // Lightweight log — only problemId, no code snapshot
       api.post('/logs', { problemId: id }).catch(() => {});
