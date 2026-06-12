@@ -4,8 +4,8 @@ import api from '../api/client';
 
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState('admin@codehunt.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -50,13 +50,14 @@ export default function AdminLogin() {
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleLogin} autoComplete="off" className="space-y-6">
           <div>
             <label className="block text-xs font-bold text-muted uppercase tracking-widest mb-2">
               Admin Email
             </label>
             <input
               type="email"
+              autoComplete="off"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full lc-input bg-input border-border text-foreground focus:border-brand"
@@ -71,6 +72,7 @@ export default function AdminLogin() {
             </label>
             <input
               type="password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full lc-input bg-input border-border text-foreground focus:border-brand"
