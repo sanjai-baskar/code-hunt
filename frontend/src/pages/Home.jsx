@@ -47,7 +47,7 @@ export default function Home() {
                 ))}
               </div>
               <p className="text-sm text-muted">
-                Trusted by <span className="text-foreground font-bold">1,000+</span> educators worldwide
+                {/* Trusted by <span className="text-foreground font-bold">1,000+</span> educators worldwide */}
               </p>
             </div>
           </div>
