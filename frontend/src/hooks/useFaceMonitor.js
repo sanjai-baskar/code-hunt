@@ -8,32 +8,30 @@ export function useFaceMonitor({ onDistraction, getCode, problemId }) {
   const startTimeRef = useRef(Date.now());
   const GRACE_PERIOD_MS = 10000;
   
-  // BEST STRATEGY: Focus on ACTUAL malpractice, not natural reading movements
+  // STRENGTHENED STRATEGY: Aggressive malpractice detection + allows legitimate reading
   const MONITORING_STRATEGY = {
-    // ===== PRIMARY THREAT: Forbidden Objects =====
-    // These indicate actual cheating, not just natural reading
+    // ===== PRIMARY THREAT: Forbidden Objects (AGGRESSIVE) =====
     FORBIDDEN_OBJECTS: ["cell phone", "laptop", "tablet", "book", "remote"],
-    OBJECT_CONFIDENCE_THRESHOLD: 0.5,
+    OBJECT_CONFIDENCE_THRESHOLD: 0.35,  // LOWERED from 0.5 for more aggressive detection
     
     // ===== SECONDARY THREAT: Multiple people (collaboration) =====
     ALLOW_MULTIPLE_FACES: false,
     
-    // ===== HEAD POSITION ONLY (ignore eye gaze) =====
-    // Only flag EXTREME head turns, not natural reading movements
-    EXTREME_YAW_LEFT: 0.50,    // 50+ degree turn - very extreme
-    EXTREME_YAW_RIGHT: -0.50,  // 50+ degree turn - very extreme
-    EXTREME_PITCH: -0.25,      // Looking far up - very extreme
+    // ===== HEAD POSITION DETECTION (STRONGER) =====
+    EXTREME_YAW_LEFT: 0.45,    // TIGHTENED from 0.50 (45° instead of 50°)
+    EXTREME_YAW_RIGHT: -0.45,  // TIGHTENED from -0.50
+    EXTREME_PITCH_UP: -0.20,   // TIGHTENED from -0.25 (looking up at wall)
+    EXTREME_PITCH_DOWN: 0.30,  // NEW: Looking down at desk/external device
     
-    // ===== READING ZONE TOLERANCE =====
-    // Students naturally look left/up to read problems - this is ALLOWED
-    READING_ZONE_YAW: 0.40,    // Up to 40 degree left turn is normal reading
-    READING_ZONE_PITCH: -0.18, // Up to 18 degree upward tilt is normal reading
+    // ===== READING ZONE (STRICT) =====
+    READING_ZONE_YAW: 0.35,    // TIGHTENED from 0.40 (tighter left turn tolerance)
+    READING_ZONE_PITCH: -0.15, // TIGHTENED from -0.18 (tighter upward tolerance)
     
-    // ===== TIMING STRATEGY =====
-    // Only flag sustained extreme behavior, not brief movements
-    WARM_UP_PERIOD_MS: 15000,    // First 15s: very lenient (student settling in)
-    SUSTAINED_EXTREME_MS: 5000,  // 5 seconds of extreme position = flag
-    SUSTAINED_READING_MS: 15000, // 15 seconds of reading zone = too long, probably cheating
+    // ===== TIMING STRATEGY (AGGRESSIVE) =====
+    WARM_UP_PERIOD_MS: 10000,     // SHORTENED from 15s (shorter warm-up)
+    SUSTAINED_EXTREME_MS: 3000,   // TIGHTENED from 5s (flag sooner)
+    SUSTAINED_READING_MS: 10000,  // TIGHTENED from 15s (flag sooner)
+    SUSTAINED_DOWN_MS: 2000,      // NEW: Flag looking down after only 2 seconds
   };
 
   const processDetection = useCallback(
@@ -76,33 +74,33 @@ export function useFaceMonitor({ onDistraction, getCode, problemId }) {
         const yaw = (nose.x - eyesMidX) / faceWidth;   // Head turn left/right
         const pitch = (nose.y - eyesMidY) / faceHeight; // Head tilt up/down
 
-        // DURING WARM-UP: Allow all natural movements
+        // DURING WARM-UP: Allow all natural movements except obvious cheating
         if (timeSinceStart < MONITORING_STRATEGY.WARM_UP_PERIOD_MS) {
-          // Only flag extreme positions during warm-up
+          // Flag only the most obvious cheating attempts during warm-up
           if (yaw < MONITORING_STRATEGY.EXTREME_YAW_RIGHT) direction = 'right-extreme';
           else if (yaw > MONITORING_STRATEGY.EXTREME_YAW_LEFT) direction = 'left-extreme';
-          else if (pitch < MONITORING_STRATEGY.EXTREME_PITCH) direction = 'up-extreme';
+          else if (pitch < MONITORING_STRATEGY.EXTREME_PITCH_UP) direction = 'up-extreme';
+          else if (pitch > MONITORING_STRATEGY.EXTREME_PITCH_DOWN) direction = 'down-extreme';
         }
-        // AFTER WARM-UP: More strict monitoring
+        // AFTER WARM-UP: Strict monitoring
         else {
+          // Check for looking DOWN (laptop/phone on desk) - aggressive detection
+          if (pitch > MONITORING_STRATEGY.EXTREME_PITCH_DOWN) {
+            direction = 'down-extreme';  // Looking at something on the desk
+          }
           // Reading zone allowed (left side, up) - common for reading problems
-          const inReadingZone = (
-            yaw >= 0 && yaw <= MONITORING_STRATEGY.READING_ZONE_YAW &&
-            pitch >= MONITORING_STRATEGY.READING_ZONE_PITCH && pitch <= 0
-          );
-          
-          if (inReadingZone) {
-            // Reading position is allowed, but not indefinitely
+          else if (yaw >= 0 && yaw <= MONITORING_STRATEGY.READING_ZONE_YAW &&
+                   pitch >= MONITORING_STRATEGY.READING_ZONE_PITCH && pitch <= 0) {
             direction = 'reading-zone';
           }
-          // Extreme positions always flagged
+          // Extreme positions flagged
           else if (yaw < MONITORING_STRATEGY.EXTREME_YAW_RIGHT) {
             direction = 'right-extreme';
           }
           else if (yaw > MONITORING_STRATEGY.EXTREME_YAW_LEFT) {
             direction = 'left-extreme';
           }
-          else if (pitch < MONITORING_STRATEGY.EXTREME_PITCH) {
+          else if (pitch < MONITORING_STRATEGY.EXTREME_PITCH_UP) {
             direction = 'up-extreme';
           }
         }
@@ -136,10 +134,15 @@ export function useFaceMonitor({ onDistraction, getCode, problemId }) {
       let flagDuration = 0;
       
       if (direction === 'reading-zone') {
-        // Reading zone allowed only briefly - if student reads for 15+ seconds continuously, probably cheating
+        // Reading zone allowed only briefly - if student reads for 10+ seconds continuously, probably cheating
         flagDuration = MONITORING_STRATEGY.SUSTAINED_READING_MS;
         shouldFlag = elapsed >= flagDuration;
-      } 
+      }
+      else if (direction === 'down-extreme') {
+        // AGGRESSIVE: Looking down at desk/external device - flag quickly (2 seconds)
+        flagDuration = MONITORING_STRATEGY.SUSTAINED_DOWN_MS;
+        shouldFlag = elapsed >= flagDuration;
+      }
       else if (direction === 'away') {
         // Face hidden = immediate flag
         shouldFlag = elapsed >= 1000;
@@ -149,11 +152,11 @@ export function useFaceMonitor({ onDistraction, getCode, problemId }) {
         shouldFlag = elapsed >= 1000;
       }
       else if (direction.includes('object-')) {
-        // Forbidden object = immediate flag
-        shouldFlag = elapsed >= 500;
+        // Forbidden object = AGGRESSIVE immediate flag (300ms)
+        shouldFlag = elapsed >= 300;
       }
       else if (direction.includes('extreme')) {
-        // Extreme head turn = flag after 5 seconds
+        // Extreme head turn = flag after 3 seconds (TIGHTENED from 5)
         flagDuration = MONITORING_STRATEGY.SUSTAINED_EXTREME_MS;
         shouldFlag = elapsed >= flagDuration;
       }

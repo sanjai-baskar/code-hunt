@@ -131,17 +131,25 @@ export default function CodingChallenge() {
   useEffect(() => {
     if (!hasStarted || isDisqualified || submitted) return;
 
-    const warnAndBlock = (e, label) => {
+    const onCopy = (e) => {
       e.preventDefault();
       setDistractionCount(prev => prev + 1);
-      addToast(`⚠️ Forbidden action: ${label}`, 'warn');
-      // Log lightweight event
+      addToast(`⚠️ Forbidden action: Copy`, 'warn');
       api.post('/logs', { problemId: id }).catch(() => {});
     };
 
-    const onCopy = (e) => warnAndBlock(e, 'Copy');
-    const onPaste = (e) => warnAndBlock(e, 'Paste');
-    const onContext = (e) => warnAndBlock(e, 'Right Click');
+    const onPaste = (e) => {
+      e.preventDefault();
+      setDistractionCount(prev => prev + 1);
+      addToast(`⚠️ Forbidden action: Paste`, 'warn');
+      api.post('/logs', { problemId: id }).catch(() => {});
+    };
+
+    const onContext = (e) => {
+      // RIGHT-CLICK: Block but DO NOT count as distraction
+      e.preventDefault();
+      // Silently blocked - no toast, no distraction count
+    };
 
     document.addEventListener('copy', onCopy);
     document.addEventListener('paste', onPaste);
@@ -211,6 +219,7 @@ export default function CodingChallenge() {
       let label;
       if (direction === 'away') label = '❌ Face not detected';
       else if (direction === 'reading-zone') label = '📖 Reading detected (too long)';
+      else if (direction === 'down-extreme') label = '🚨 Looking DOWN - Suspicious Device Use';
       else if (direction === 'left-extreme' || direction === 'right-extreme') 
         label = '⚠️ Head turned too far away';
       else if (direction === 'up-extreme') label = '⚠️ Head tilted too far up';
