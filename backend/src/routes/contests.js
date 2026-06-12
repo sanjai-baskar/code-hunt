@@ -116,11 +116,23 @@ router.get('/:id/leaderboard', authenticateToken, async (req, res) => {
 
     const contest = await prisma.contest.findUnique({
       where: { id: req.params.id },
-      include: { problems: true }
+      select: {
+        id: true,
+        title: true,
+        startTime: true,
+        endTime: true,
+        problemIds: true,
+      }
     });
 
     if (!contest) {
       return res.status(404).json({ error: 'Contest not found' });
+    }
+
+    // Handle empty problemIds
+    if (!contest.problemIds || contest.problemIds.length === 0) {
+      console.warn(`Contest ${req.params.id} has no problems assigned`);
+      return res.json([]);
     }
 
     // Get all submissions for the problems in this contest within the contest timeframe
@@ -138,6 +150,11 @@ router.get('/:id/leaderboard', authenticateToken, async (req, res) => {
         problem: { select: { id: true, points: true } }
       }
     });
+
+    if (!submissions || submissions.length === 0) {
+      console.log(`Contest ${req.params.id} has no submissions yet`);
+      return res.json([]);
+    }
 
     // Calculate leaderboard with detailed metrics
     const participantMap = new Map();
@@ -195,7 +212,7 @@ router.get('/:id/leaderboard', authenticateToken, async (req, res) => {
 
     res.json(leaderboard);
   } catch (err) {
-    console.error(err);
+    console.error('Leaderboard error:', err);
     res.status(500).json({ error: 'Internal server error', details: err.message });
   }
 });

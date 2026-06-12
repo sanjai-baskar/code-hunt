@@ -12,16 +12,20 @@ export default function Leaderboard({ contestId }) {
         const res = await api.get(`/contests/${contestId}/leaderboard`);
         setLeaderboard(res.data);
       } catch (err) {
-        setError('Failed to load leaderboard.');
+        console.error('Leaderboard error:', err.response?.data || err.message);
+        const errorMsg = err.response?.data?.error || err.response?.data?.message || 'Failed to load leaderboard.';
+        setError(errorMsg);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchLeaderboard();
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchLeaderboard, 30000);
-    return () => clearInterval(interval);
+    if (contestId) {
+      fetchLeaderboard();
+      // Refresh every 30 seconds
+      const interval = setInterval(fetchLeaderboard, 30000);
+      return () => clearInterval(interval);
+    }
   }, [contestId]);
 
   if (loading) return <div className="text-center p-8 text-muted">Loading Leaderboard...</div>;
