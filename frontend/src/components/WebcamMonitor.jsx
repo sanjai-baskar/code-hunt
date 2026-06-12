@@ -35,7 +35,7 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId, onCam
   const handleFaceResults = useCallback((results) => {
     processDetection(results, lastObjects.current);
     if (results.multiFaceLandmarks?.length) {
-      setStatus('Monitoring');
+      setStatus('Active');
     } else {
       setStatus('Face Hidden');
     }

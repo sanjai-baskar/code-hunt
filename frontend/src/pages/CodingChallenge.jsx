@@ -209,13 +209,17 @@ export default function CodingChallenge() {
     setDistractionCount((prev) => {
       const next = prev + 1;
       let label;
-      if (direction === 'away') label = 'Face not detected';
-      else if (direction === 'talking') label = 'Voice/Talking detected';
-      else if (direction === 'suspicious-pose') label = 'Suspicious head movement';
-      else if (direction.startsWith('object-')) label = `Forbidden object: ${direction.replace('object-', '').replace('-', ' ')}`;
-      else if (direction === 'multiple-faces') label = 'Multiple faces detected!';
-      else label = `Looking ${direction}`;
-      addToast(`⚠️ ${label}`, 'warn');
+      if (direction === 'away') label = '❌ Face not detected';
+      else if (direction === 'reading-zone') label = '📖 Reading detected (too long)';
+      else if (direction === 'left-extreme' || direction === 'right-extreme') 
+        label = '⚠️ Head turned too far away';
+      else if (direction === 'up-extreme') label = '⚠️ Head tilted too far up';
+      else if (direction === 'talking') label = '🔊 Voice/Talking detected';
+      else if (direction === 'suspicious-pose') label = '⚠️ Suspicious head movement';
+      else if (direction.startsWith('object-')) label = `🚫 Forbidden object: ${direction.replace('object-', '').replace('-', ' ')}`;
+      else if (direction === 'multiple-faces') label = '👥 Multiple faces detected!';
+      else label = `⚠️ Distraction: ${direction}`;
+      addToast(label, 'warn');
       // Lightweight log — only problemId, no code snapshot
       api.post('/logs', { problemId: id }).catch(() => {});
       if (next >= 10) {
