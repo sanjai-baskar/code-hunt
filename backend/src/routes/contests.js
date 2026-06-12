@@ -184,7 +184,7 @@ router.get('/:id/leaderboard', authenticateToken, async (req, res) => {
       timePenalty: p.timePenalty,
       solvedCount: p.solvedProblems.size,
       totalTestCasesPassed: p.totalTestCasesPassed,
-      firstSolveTime: p.firstSolveTime,
+      firstSolveTime: p.firstSolveTime ? new Date(p.firstSolveTime).getTime() - new Date(contest.startTime).getTime() : null,
     }));
 
     // Sort by points (descending) and then time penalty (ascending)

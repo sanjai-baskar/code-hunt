@@ -79,7 +79,7 @@ export default function Leaderboard({ contestId }) {
                     {entry.points}
                   </td>
                   <td className="px-6 py-4 text-right text-muted font-mono">
-                    {formatTime(entry.firstSolveTime ? new Date(entry.firstSolveTime).getTime() : 0)}
+                    {formatTime(entry.firstSolveTime)}
                   </td>
                   <td className="px-6 py-4 text-right text-muted font-mono">
                     {entry.timePenalty}
