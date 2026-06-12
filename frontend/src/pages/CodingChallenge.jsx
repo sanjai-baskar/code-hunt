@@ -27,6 +27,8 @@ export default function CodingChallenge() {
   const [showBanner, setShowBanner] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [isDisqualified, setIsDisqualified] = useState(false);
+  const [leaveCount, setLeaveCount] = useState(0);
+  const [overlayVisible, setOverlayVisible] = useState(false);
   const [language, setLanguage] = useState('java');
   const [webcamEnabled, setWebcamEnabled] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
@@ -78,54 +80,97 @@ export default function CodingChallenge() {
   useEffect(() => {
     if (!hasStarted || submitted) return;
 
+    const handleHidden = () => {
+      if (isDisqualified || submitted) return;
+      // Log the event
+      api.post('/logs', { problemId: id }).catch(() => {});
+
+      setLeaveCount((prev) => {
+        const next = prev + 1;
+        if (next === 1) {
+          setOverlayVisible(true);
+          addToast('⚠️ You left the exam window. You may rejoin once.');
+        } else {
+          setIsDisqualified(true);
+          addToast('❌ Multiple window switches detected — session terminated.', 'error');
+          setTimeout(() => {
+            alert('SECURITY VIOLATION: Multiple tab/window switches detected. Your session has been terminated.');
+            localStorage.clear();
+            window.location.href = '/login';
+          }, 800);
+        }
+        return next;
+      });
+    };
+
     const handleVisibility = () => {
-      if (document.visibilityState === 'hidden' && !isDisqualified) {
-        setIsDisqualified(true);
-        // Only send problemId — no code snapshot
-        api.post('/logs', { problemId: id }).catch(() => {});
-        alert("CRITICAL SECURITY VIOLATION: Multi-tab/Window switching detected. Your session has been terminated.");
-        localStorage.clear();
-        window.location.href = '/login';
+      if (document.visibilityState === 'hidden') handleHidden();
+      else if (document.visibilityState === 'visible') {
+        if (overlayVisible) {
+          setOverlayVisible(false);
+          addToast('You have rejoined the exam. Continue.');
+        }
       }
     };
 
+    const handleBlur = () => {
+      // window.blur often accompanies tab change; treat same as hidden
+      handleHidden();
+    };
+
     document.addEventListener('visibilitychange', handleVisibility);
-    window.addEventListener('blur', handleVisibility);
+    window.addEventListener('blur', handleBlur);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility);
-      window.removeEventListener('blur', handleVisibility);
+      window.removeEventListener('blur', handleBlur);
     };
-  }, [hasStarted, id, isDisqualified, submitted]);
+  }, [hasStarted, id, isDisqualified, submitted, overlayVisible, addToast]);
 
   // copy/paste/right-click security
   useEffect(() => {
     if (!hasStarted || isDisqualified || submitted) return;
 
-    const handleSecurityViolation = (e) => {
+    const warnAndBlock = (e, label) => {
       e.preventDefault();
       setDistractionCount(prev => prev + 1);
-      addToast("⚠️ Security Violation: Unauthorized action detected!", "error");
-      setIsDisqualified(true);
-      // Only send problemId — no code snapshot
+      addToast(`⚠️ Forbidden action: ${label}`, 'warn');
+      // Log lightweight event
       api.post('/logs', { problemId: id }).catch(() => {});
-      setTimeout(() => {
-        alert("SECURITY VIOLATION: Copy, Paste, and Right-click are strictly prohibited. Your session has been terminated and this incident has been logged.");
-        localStorage.clear();
-        window.location.href = '/';
-      }, 1000);
     };
 
-    document.addEventListener('copy', handleSecurityViolation);
-    document.addEventListener('paste', handleSecurityViolation);
-    document.addEventListener('contextmenu', handleSecurityViolation);
+    const onCopy = (e) => warnAndBlock(e, 'Copy');
+    const onPaste = (e) => warnAndBlock(e, 'Paste');
+    const onContext = (e) => warnAndBlock(e, 'Right Click');
+
+    document.addEventListener('copy', onCopy);
+    document.addEventListener('paste', onPaste);
+    document.addEventListener('contextmenu', onContext);
 
     return () => {
-      document.removeEventListener('copy', handleSecurityViolation);
-      document.removeEventListener('paste', handleSecurityViolation);
-      document.removeEventListener('contextmenu', handleSecurityViolation);
+      document.removeEventListener('copy', onCopy);
+      document.removeEventListener('paste', onPaste);
+      document.removeEventListener('contextmenu', onContext);
     };
   }, [hasStarted, id, isDisqualified, submitted, addToast]);
+
+  // keyboard shortcuts (Ctrl/Cmd + C/V/A/Z) — disable and warn
+  useEffect(() => {
+    if (!hasStarted || isDisqualified || submitted) return;
+
+    const onKeyDown = (e) => {
+      const key = (e.key || '').toLowerCase();
+      if ((e.ctrlKey || e.metaKey) && ['c', 'v', 'a', 'z'].includes(key)) {
+        e.preventDefault();
+        setDistractionCount(prev => prev + 1);
+        addToast('⚠️ Keyboard shortcuts like copy/paste/select/undo are disabled during the exam.', 'warn');
+        api.post('/logs', { problemId: id }).catch(() => {});
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [hasStarted, isDisqualified, submitted, addToast, id]);
 
   const startChallenge = () => {
     if (document.documentElement.requestFullscreen) {
@@ -287,6 +332,23 @@ export default function CodingChallenge() {
       )}
 
       {showBanner && <DistractionBanner count={distractionCount} />}
+
+      {overlayVisible && (
+        <div className="fixed inset-0 z-[30000] bg-black/60 flex items-center justify-center p-6">
+          <div className="max-w-md w-full lc-card p-8 border-border bg-surface text-center">
+            <h3 className="text-lg font-bold mb-3">You left the exam window</h3>
+            <p className="text-sm text-muted mb-6">You may rejoin once. Click <strong>Rejoin</strong> to continue. Further tab/window switches will terminate your session.</p>
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={() => { setOverlayVisible(false); addToast('Rejoined exam.'); }}
+                className="lc-btn-primary px-6 py-2"
+              >
+                Rejoin
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Navbar */}
       <div className="lc-navbar shrink-0 justify-between px-4 md:px-6 bg-surface border-b border-border">

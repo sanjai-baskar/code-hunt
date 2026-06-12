@@ -51,12 +51,16 @@ export default function AdminLogin() {
         )}
 
         <form onSubmit={handleLogin} autoComplete="off" className="space-y-6">
+          <input type="text" name="fakeusernameremembered" autoComplete="username" className="hidden" />
+          <input type="password" name="fakepasswordremembered" autoComplete="new-password" className="hidden" />
+
           <div>
             <label className="block text-xs font-bold text-muted uppercase tracking-widest mb-2">
               Admin Email
             </label>
             <input
               type="email"
+              name="admin-email"
               autoComplete="off"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -72,6 +76,7 @@ export default function AdminLogin() {
             </label>
             <input
               type="password"
+              name="admin-password"
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
