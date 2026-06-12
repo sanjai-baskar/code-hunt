@@ -7,6 +7,20 @@ export function useFaceMonitor({ onDistraction, getCode, problemId }) {
   const timerActive = useRef(false);
   const startTimeRef = useRef(Date.now());
   const GRACE_PERIOD_MS = 10000;
+  
+  // NEW: Sensitivity settings to reduce false positives
+  const SENSITIVITY = {
+    // Yaw thresholds (head left/right turns) - increased from ±0.22 to ±0.30 to allow reading
+    YAW_LEFT: 0.30,
+    YAW_RIGHT: -0.30,
+    // Pitch threshold (head up/down tilt) - increased from -0.08 to -0.12
+    PITCH_UP: -0.12,
+    // Duration before flagging sustained deviation (increased from 2500ms to 3500ms)
+    // This allows brief glances at questions without penalty
+    SUSTAINED_DURATION_MS: 3500,
+    // Quick return to center resets the timer (allows natural movement)
+    QUICK_RESET_WINDOW_MS: 800,
+  };
 
   const processDetection = useCallback(
     (results, objects = []) => {
@@ -26,7 +40,7 @@ export function useFaceMonitor({ onDistraction, getCode, problemId }) {
       else if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 1) {
         direction = 'multiple-faces';
       } 
-      // 3. Robust Face Orientation
+      // 3. Robust Face Orientation with improved thresholds
       else if (results.multiFaceLandmarks && results.multiFaceLandmarks.length === 1) {
         const landmarks = results.multiFaceLandmarks[0];
         const nose = landmarks[1];
@@ -43,15 +57,29 @@ export function useFaceMonitor({ onDistraction, getCode, problemId }) {
         const yaw = (nose.x - eyesMidX) / faceWidth;
         const pitch = (nose.y - eyesMidY) / faceHeight;
 
-        if (yaw < -0.22) direction = 'right';
-        else if (yaw > 0.22) direction = 'left';
-        else if (pitch < -0.08) direction = 'up';
+        // Use new, less sensitive thresholds
+        if (yaw < SENSITIVITY.YAW_RIGHT) direction = 'right';
+        else if (yaw > SENSITIVITY.YAW_LEFT) direction = 'left';
+        else if (pitch < SENSITIVITY.PITCH_UP) direction = 'up';
       } else {
         direction = 'away';
       }
 
       const now = Date.now();
       if (direction === null) {
+        // Head returned to neutral position
+        if (timerActive.current && distractionStart.current) {
+          const timeSinceDeviation = now - distractionStart.current;
+          // If deviation lasted less than quick reset window, don't count it
+          // This allows students to briefly glance at questions
+          if (timeSinceDeviation < SENSITIVITY.QUICK_RESET_WINDOW_MS) {
+            // Quick glance - don't flag
+            distractionStart.current = null;
+            currentDir.current = null;
+            timerActive.current = false;
+            return;
+          }
+        }
         distractionStart.current = null;
         currentDir.current = null;
         timerActive.current = false;
@@ -66,7 +94,8 @@ export function useFaceMonitor({ onDistraction, getCode, problemId }) {
       }
 
       const elapsed = now - distractionStart.current;
-      if (elapsed >= 2500) {
+      // Only flag after sustained duration (3500ms instead of 2500ms)
+      if (elapsed >= SENSITIVITY.SUSTAINED_DURATION_MS) {
         const startTime = new Date(distractionStart.current).toISOString();
         const endTime = new Date(now).toISOString();
         const snapshot = getCode ? getCode() : '';
