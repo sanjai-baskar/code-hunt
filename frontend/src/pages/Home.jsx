@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 
 export default function Home() {
+  const [cameraImageLoaded, setCameraImageLoaded] = useState(true);
+
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       {/* Hero Section */}
@@ -55,18 +57,30 @@ export default function Home() {
           <div className="relative group">
             <div className="absolute inset-0 bg-gradient-to-tr from-[#ffa116]/20 to-transparent rounded-3xl blur-3xl" />
             <div className="relative lc-card p-4 rotate-2 group-hover:rotate-0 transition-transform duration-500 overflow-hidden border-border bg-surface">
-               <div className="aspect-video bg-background rounded-lg overflow-hidden relative border border-border">
+              <div className="aspect-video rounded-lg overflow-hidden relative border border-border bg-slate-900">
+                {cameraImageLoaded ? (
+                  <>
+                    <img
+                      src="/camera-card.jpg"
+                      alt="Proctoring camera preview"
+                      className="absolute inset-0 h-full w-full object-cover"
+                      onError={() => setCameraImageLoaded(false)}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                  </>
+                ) : (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/5 dark:bg-white/5">
                     <span className="text-4xl">📸</span>
                   </div>
-                  <div className="absolute bottom-4 left-4 right-4 h-12 bg-surface/80 backdrop-blur rounded-lg border border-border flex items-center px-4 justify-between">
-                    <div className="flex items-center gap-2">
-                       <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                       <span className="text-[10px] font-bold uppercase tracking-widest text-muted">AI Active</span>
-                    </div>
-                    <span className="text-[10px] font-black text-brand">EYE GAZE DETECTED</span>
+                )}
+                <div className="absolute bottom-4 left-4 right-4 h-12 bg-surface/80 backdrop-blur rounded-lg border border-border flex items-center px-4 justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted">AI Active</span>
                   </div>
-               </div>
+                  <span className="text-[10px] font-black text-brand">EYE GAZE DETECTED</span>
+                </div>
+              </div>
             </div>
             <div className="absolute -bottom-6 -left-6 lc-card p-6 -rotate-3 group-hover:rotate-0 transition-transform duration-500 max-w-[240px] border-border bg-surface">
               <h3 className="text-sm font-bold mb-2 text-foreground">Security Report</h3>
