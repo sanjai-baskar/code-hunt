@@ -172,6 +172,13 @@ router.post('/contests', authenticateToken, requireAdmin, async (req, res) => {
       return res.status(400).json({ error: 'Title, startTime, and endTime are required' });
     }
 
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+
+    if (end <= start) {
+      return res.status(400).json({ error: 'End time must be strictly after start time' });
+    }
+
     const contest = await prisma.contest.create({
       data: {
         title,

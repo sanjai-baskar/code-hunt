@@ -7,30 +7,32 @@ export function useFaceMonitor({ onDistraction, getCode, problemId }) {
   const timerActive = useRef(false);
   const startTimeRef = useRef(Date.now());
   
-  // FAIR STRATEGY: Allow students to use their own notes
-  // Focus on REAL cheating: external devices, collaboration, face hidden
+  // ASYMMETRIC STRICT MONITORING
+  // LEFT: Allowed (reading problems)
+  // DOWN: Allowed (checking own notes)
+  // RIGHT: Strict monitoring (looking at someone else)
+  // UP: Strict monitoring (looking at wall/materials)
   const MONITORING_STRATEGY = {
     // ===== CRITICAL: Forbidden External Materials =====
-    // Phone screens, tablet screens, external papers being read
     FORBIDDEN_OBJECTS: ["cell phone", "laptop", "tablet", "book", "remote"],
     OBJECT_CONFIDENCE_THRESHOLD: 0.40,
     
     // ===== CRITICAL: Collaboration =====
     ALLOW_MULTIPLE_FACES: false,
     
-    // ===== HEAD POSITION: Very Lenient =====
-    // Allow students to look left, right, down to check their own notes
-    // Only flag if EXTREMELY turned or NEVER looks back at screen
-    EXTREME_YAW_LEFT: 0.75,        // ~75 degrees (almost looking behind)
-    EXTREME_YAW_RIGHT: -0.75,      // ~75 degrees (almost looking behind)
-    EXTREME_PITCH_DOWN: 0.55,      // ~55 degrees (looking straight down at legs)
-    EXTREME_PITCH_UP: -0.45,       // ~45 degrees (looking at ceiling)
+    // ===== ASYMMETRIC THRESHOLDS =====
+    // RIGHT: Strict - flag any significant right turn
+    RIGHT_YAW_THRESHOLD: -0.25,      // Even small right turn (< 30°) flags
     
-    // ===== TIMING: Only flag sustained unnatural behavior =====
-    WARM_UP_PERIOD_MS: 20000,          // First 20s: VERY lenient (student settling)
-    BRIEF_GLANCE_OK_MS: 3000,          // Glances < 3s are fine (checking notes)
-    SUSTAINED_ANOMALY_MS: 10000,       // Sustained extreme > 10s = suspicious
-    CONTINUOUS_DEVIATION_MS: 30000,    // Never looks at screen > 30s = suspicious
+    // UP: Strict - flag any upward tilt
+    UP_PITCH_THRESHOLD: -0.15,       // Even small up tilt flags
+    
+    // LEFT: NOT MONITORED - allow any left turn (reading problems)
+    // DOWN: NOT MONITORED - allow any downward pitch (checking notes)
+    
+    // ===== TIMING =====
+    WARM_UP_PERIOD_MS: 15000,        // First 15s: lenient
+    SUSTAINED_VIOLATION_MS: 3000,    // 3s of violation = flag
   };
 
   const processDetection = useCallback(

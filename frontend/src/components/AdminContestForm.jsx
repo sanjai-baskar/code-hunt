@@ -43,6 +43,12 @@ export default function AdminContestForm({ contest, problems, onClose, onSaved }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (new Date(formData.endTime) <= new Date(formData.startTime)) {
+      alert('End Time must be strictly after Start Time.');
+      return;
+    }
+
     setLoading(true);
     try {
       if (contest) {
@@ -114,6 +120,7 @@ export default function AdminContestForm({ contest, problems, onClose, onSaved }
                 type="datetime-local"
                 className="lc-input" 
                 value={formData.endTime} 
+                min={formData.startTime}
                 onChange={e => setFormData({ ...formData, endTime: e.target.value })}
               />
             </div>
