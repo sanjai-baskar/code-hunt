@@ -20,19 +20,15 @@ export function useFaceMonitor({ onDistraction, getCode, problemId }) {
     // ===== CRITICAL: Collaboration =====
     ALLOW_MULTIPLE_FACES: false,
     
-    // ===== ASYMMETRIC THRESHOLDS =====
-    // RIGHT: Strict - flag any significant right turn
-    RIGHT_YAW_THRESHOLD: -0.25,      // Even small right turn (< 30°) flags
-    
-    // UP: Strict - flag any upward tilt
-    UP_PITCH_THRESHOLD: -0.15,       // Even small up tilt flags
-    
-    // LEFT: NOT MONITORED - allow any left turn (reading problems)
-    // DOWN: NOT MONITORED - allow any downward pitch (checking notes)
+    // ===== EXTREME THRESHOLDS =====
+    EXTREME_YAW_LEFT: 0.50,      // 50° left (increase = more lenient)
+    EXTREME_YAW_RIGHT: -0.50,    // 50° right (decrease = more lenient)
+    EXTREME_PITCH_DOWN: 0.25,    // 25° down
+    EXTREME_PITCH_UP: -0.25,     // 25° up
     
     // ===== TIMING =====
     WARM_UP_PERIOD_MS: 15000,        // First 15s: lenient
-    SUSTAINED_VIOLATION_MS: 3000,    // 3s of violation = flag
+    SUSTAINED_ANOMALY_MS: 5000,      // 5s of extreme = flag
   };
 
   const processDetection = useCallback(

@@ -66,77 +66,126 @@ export default function AdminProblemForm({ problem, onClose, onSaved }) {
     }
   };
 
+  const [uploadStatus, setUploadStatus] = useState(null); // null | 'success' | 'error'
+
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      const text = event.target.result;
-      const newFormData = { ...formData };
-      
-      const titleMatch = text.match(/Title:\s*(.+)/i);
-      if (titleMatch) newFormData.title = titleMatch[1].trim();
+      try {
+        const text = event.target.result;
 
-      const difficultyMatch = text.match(/Difficulty:\s*(.+)/i);
-      if (difficultyMatch) {
-        const diff = difficultyMatch[1].trim();
-        if (['Easy', 'Medium', 'Hard'].includes(diff)) {
-          newFormData.difficulty = diff;
+        // Build parsed fields independently (avoids stale closure on formData)
+        const parsed = {};
+
+        const titleMatch = text.match(/Title:\s*(.+)/i);
+        if (titleMatch) parsed.title = titleMatch[1].trim();
+
+        const difficultyMatch = text.match(/Difficulty:\s*(.+)/i);
+        if (difficultyMatch) {
+          const diff = difficultyMatch[1].trim();
+          if (['Easy', 'Medium', 'Hard'].includes(diff)) parsed.difficulty = diff;
         }
+
+        const categoryMatch = text.match(/Category:\s*(.+)/i);
+        if (categoryMatch) parsed.category = categoryMatch[1].trim();
+
+        const pointsMatch = text.match(/Points:\s*(\d+)/i);
+        if (pointsMatch) parsed.points = parseInt(pointsMatch[1], 10);
+
+        const functionNameMatch =
+          text.match(/Main Class Name:\s*(.+)/i) ||
+          text.match(/Function Name:\s*(.+)/i);
+        if (functionNameMatch) parsed.functionName = functionNameMatch[1].trim();
+
+        // Description: capture everything up to "Starter Code:", "Test Cases:", first "Input:", or end-of-string
+        const descMatch = text.match(
+          /Description:\s*([\s\S]*?)(?=Starter Code:|Test Cases:|Input:|$)/i
+        );
+        if (descMatch && descMatch[1].trim()) {
+          parsed.description = descMatch[1].trim();
+        } else if (!titleMatch && !difficultyMatch && !categoryMatch) {
+          // Fallback: no headers found → put entire text in description
+          parsed.description = text.trim();
+        }
+
+        // Starter Code: capture until "Test Cases:", first "Input:", or end-of-string
+        const starterMatch = text.match(
+          /Starter Code:\s*([\s\S]*?)(?=Test Cases:|Input:|$)/i
+        );
+        if (starterMatch && starterMatch[1].trim()) {
+          parsed.starterCode = starterMatch[1].trim();
+        }
+
+        // Test cases: Input/Output pairs
+        // The last Output block runs until the next "Input:" or end of string
+        const testCases = [];
+        const tcRegex = /Input:\s*([\s\S]*?)Output:\s*([\s\S]*?)(?=Input:|(?:\r?\n){0}$)/gi;
+        let match;
+        while ((match = tcRegex.exec(text)) !== null) {
+          const input = match[1].trim();
+          const output = match[2].trim();
+          if (input !== '' || output !== '') {
+            testCases.push({ input, output });
+          }
+        }
+        if (testCases.length > 0) parsed.testCases = testCases;
+
+        // Merge parsed fields into current form state (functional update avoids stale closure)
+        setFormData(prev => ({ ...prev, ...parsed }));
+        setUploadStatus('success');
+        setTimeout(() => setUploadStatus(null), 3000);
+      } catch (err) {
+        console.error('File parse error:', err);
+        setUploadStatus('error');
+        setTimeout(() => setUploadStatus(null), 3000);
       }
-
-      const categoryMatch = text.match(/Category:\s*(.+)/i);
-      if (categoryMatch) newFormData.category = categoryMatch[1].trim();
-
-      const functionNameMatch = text.match(/Main Class Name:\s*(.+)/i) || text.match(/Function Name:\s*(.+)/i);
-      if (functionNameMatch) newFormData.functionName = functionNameMatch[1].trim();
-
-      const descMatch = text.match(/Description:\s*([\s\S]*?)(?=Starter Code:|Test Cases:|Input:|$)/i);
-      if (descMatch) newFormData.description = descMatch[1].trim();
-      else if (!titleMatch && !difficultyMatch && !categoryMatch) {
-         newFormData.description = text; // Fallback: just put all text in description if no headers found
-      }
-
-      const starterMatch = text.match(/Starter Code:\s*([\s\S]*?)(?=Test Cases:|Input:|$)/i);
-      if (starterMatch) newFormData.starterCode = starterMatch[1].trim();
-
-      const testCases = [];
-      const tcRegex = /Input:\s*([\s\S]*?)Output:\s*([\s\S]*?)(?=Input:|$)/gi;
-      let match;
-      while ((match = tcRegex.exec(text)) !== null) {
-        testCases.push({
-          input: match[1].trim(),
-          output: match[2].trim()
-        });
-      }
-      
-      if (testCases.length > 0) {
-        newFormData.testCases = testCases;
-      }
-
-      setFormData(newFormData);
+    };
+    reader.onerror = () => {
+      setUploadStatus('error');
+      setTimeout(() => setUploadStatus(null), 3000);
     };
     reader.readAsText(file);
-    e.target.value = null; // reset input
+    e.target.value = null; // reset so same file can be re-uploaded
   };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="lc-card w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 animate-fade-in bg-white">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-[var(--text-main)]">{problem ? 'Edit Problem' : 'Create New Problem'}</h2>
           <div className="flex items-center gap-4">
-            <label className="cursor-pointer text-sm font-medium text-[#45A29E] bg-[#45A29E]/10 hover:bg-[#45A29E]/20 px-4 py-2 rounded transition-colors flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-              </svg>
-              Upload .txt
-              <input type="file" accept=".txt" className="hidden" onChange={handleFileUpload} />
-            </label>
+            <div className="flex flex-col items-end gap-1">
+              <label className="cursor-pointer text-sm font-medium text-[#45A29E] bg-[#45A29E]/10 hover:bg-[#45A29E]/20 px-4 py-2 rounded transition-colors flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                </svg>
+                Upload .txt
+                <input type="file" accept=".txt" className="hidden" onChange={handleFileUpload} />
+              </label>
+              <span className="text-[10px] text-gray-400 pr-1">
+                Fields: Title, Difficulty, Category, Points, Main Class Name, Description, Starter Code, Input/Output
+              </span>
+            </div>
             <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-main)] text-xl">✕</button>
           </div>
         </div>
+
+        {/* Upload status banner */}
+        {uploadStatus === 'success' && (
+          <div className="mb-4 flex items-center gap-2 bg-green-500/10 border border-green-500/30 text-green-600 text-sm px-4 py-2.5 rounded-lg animate-fade-in">
+            <span>✅</span>
+            <span>File parsed successfully! Fields have been populated below.</span>
+          </div>
+        )}
+        {uploadStatus === 'error' && (
+          <div className="mb-4 flex items-center gap-2 bg-red-500/10 border border-red-500/30 text-red-500 text-sm px-4 py-2.5 rounded-lg animate-fade-in">
+            <span>❌</span>
+            <span>Failed to read or parse the file. Please check the format and try again.</span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-3 gap-4">
