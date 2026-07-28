@@ -148,14 +148,9 @@ export default function StudentDashboard() {
                   className="w-full lc-input bg-input border-border text-foreground focus:border-brand"
                 >
                   <option value="">Select Class</option>
-                  <option value="BSIT">BSIT</option>
-                  <option value="BSCS">BSCS</option>
-                  <option value="BSIS">BSIS</option>
-                  <option value="BSBA">BSBA</option>
-                  <option value="BSA">BSA</option>
-                  <option value="BSCE">BSCE</option>
-                  <option value="BSEE">BSEE</option>
-                  <option value="BSME">BSME</option>
+                  <option value="BSC CS">BSC CS</option>
+                  <option value="BSC AIML">BSC AIML</option>
+                  <option value="BCA">BCA</option>
                 </select>
               </div>
               <div>
@@ -166,10 +161,9 @@ export default function StudentDashboard() {
                   className="w-full lc-input bg-input border-border text-foreground focus:border-brand"
                 >
                   <option value="">Select Year</option>
-                  <option value="1st Year">1st Year</option>
-                  <option value="2nd Year">2nd Year</option>
-                  <option value="3rd Year">3rd Year</option>
-                  <option value="4th Year">4th Year</option>
+                  <option value="I">I</option>
+                  <option value="II">II</option>
+                  <option value="III">III</option>
                 </select>
               </div>
               <button

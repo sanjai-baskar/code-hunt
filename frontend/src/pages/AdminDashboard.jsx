@@ -270,10 +270,9 @@ export default function AdminDashboard() {
                 className="lc-input bg-input border-border text-foreground focus:border-brand text-sm px-3 py-2 rounded-lg"
               >
                 <option value="">All Years</option>
-                <option value="1st Year">1st Year</option>
-                <option value="2nd Year">2nd Year</option>
-                <option value="3rd Year">3rd Year</option>
-                <option value="4th Year">4th Year</option>
+                <option value="I">I</option>
+                <option value="II">II</option>
+                <option value="III">III</option>
               </select>
             </div>
             <div className="space-y-3">
