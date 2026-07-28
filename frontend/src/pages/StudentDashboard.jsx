@@ -11,11 +11,29 @@ export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
-  const [viewMode, setViewMode] = useState('practice'); // 'practice' or 'contests'
+  const [viewMode, setViewMode] = useState('practice');
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileClass, setProfileClass] = useState(user.class || '');
+  const [profileYear, setProfileYear] = useState(user.year || '');
+  const [savingProfile, setSavingProfile] = useState(false);
 
   const handleLogout = () => {
     localStorage.clear();
     navigate('/login');
+  };
+
+  const saveProfile = async () => {
+    setSavingProfile(true);
+    try {
+      const res = await api.patch('/student/profile', { class: profileClass, year: profileYear });
+      const updatedUser = { ...user, class: res.data.class, year: res.data.year };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setShowProfileModal(false);
+    } catch (e) {
+      alert('Failed to save profile');
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   const fetchData = async () => {
@@ -77,11 +95,19 @@ export default function StudentDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-
             <div className="text-right hidden sm:block">
               <p className="text-xs font-bold text-foreground">{user.name}</p>
               <p className="text-[10px] text-muted">{user.email}</p>
+              {(user.class || user.year) && (
+                <p className="text-[10px] text-brand font-medium">{user.class}{user.class && user.year ? ' · ' : ''}{user.year}</p>
+              )}
             </div>
+            <button
+              onClick={() => { setProfileClass(user.class || ''); setProfileYear(user.year || ''); setShowProfileModal(true); }}
+              className="text-xs text-brand hover:text-brand/80 font-medium transition-colors"
+            >
+              Profile
+            </button>
             <button 
               onClick={handleLogout}
               className="text-xs text-muted hover:text-red-500 font-medium transition-colors"
@@ -103,8 +129,61 @@ export default function StudentDashboard() {
                   <div className="flex gap-2 text-xs">
                     <span className="px-3 py-1 bg-background border border-border rounded-full text-muted">Difficulty ▾</span>
                     <span className="px-3 py-1 bg-background border border-border rounded-full text-muted">Status ▾</span>
-                  </div>
-                </div>
+</div>
+
+      {/* Profile Edit Modal */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="lc-card w-full max-w-md p-6 bg-surface border-border">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-foreground">Edit Profile</h3>
+              <button onClick={() => setShowProfileModal(false)} className="text-muted hover:text-foreground text-xl transition-colors">✕</button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Class</label>
+                <select
+                  value={profileClass}
+                  onChange={(e) => setProfileClass(e.target.value)}
+                  className="w-full lc-input bg-input border-border text-foreground focus:border-brand"
+                >
+                  <option value="">Select Class</option>
+                  <option value="BSIT">BSIT</option>
+                  <option value="BSCS">BSCS</option>
+                  <option value="BSIS">BSIS</option>
+                  <option value="BSBA">BSBA</option>
+                  <option value="BSA">BSA</option>
+                  <option value="BSCE">BSCE</option>
+                  <option value="BSEE">BSEE</option>
+                  <option value="BSME">BSME</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Year</label>
+                <select
+                  value={profileYear}
+                  onChange={(e) => setProfileYear(e.target.value)}
+                  className="w-full lc-input bg-input border-border text-foreground focus:border-brand"
+                >
+                  <option value="">Select Year</option>
+                  <option value="1st Year">1st Year</option>
+                  <option value="2nd Year">2nd Year</option>
+                  <option value="3rd Year">3rd Year</option>
+                  <option value="4th Year">4th Year</option>
+                </select>
+              </div>
+              <button
+                onClick={saveProfile}
+                disabled={savingProfile}
+                className="w-full lc-btn-primary py-3 mt-2 disabled:opacity-50"
+              >
+                {savingProfile ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
                 
                 {/* Category Tabs */}
                 <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">

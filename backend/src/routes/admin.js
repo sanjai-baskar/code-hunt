@@ -8,12 +8,18 @@ const { authenticateToken, requireAdmin } = require('../middleware/auth');
 // GET /api/admin/students — list all students with summary data
 router.get('/students', authenticateToken, requireAdmin, async (req, res) => {
   try {
+    const { year } = req.query;
+    const where = { role: 'student' };
+    if (year) where.year = year;
+
     const students = await prisma.user.findMany({
-      where: { role: 'student' },
+      where,
       select: {
         id: true,
         name: true,
         email: true,
+        class: true,
+        year: true,
         createdAt: true,
         submissions: {
           where: { passedTestCases: true },
@@ -54,6 +60,8 @@ router.get('/students', authenticateToken, requireAdmin, async (req, res) => {
         id: s.id,
         name: s.name,
         email: s.email,
+        class: s.class,
+        year: s.year,
         createdAt: s.createdAt,
         solvedProblems: uniqueSolvedProblems,
         solvedCount: uniqueSolvedProblems.length,
@@ -75,7 +83,7 @@ router.get('/student/:id', authenticateToken, requireAdmin, async (req, res) => 
     const student = await prisma.user.findUnique({
       where: { id: req.params.id },
       select: {
-        id: true, email: true, name: true,
+        id: true, email: true, name: true, class: true, year: true,
         submissions: {
           select: {
             id: true,
@@ -114,7 +122,7 @@ router.get('/student/:id', authenticateToken, requireAdmin, async (req, res) => 
     const hadDistraction = summaries.some(d => d.hadDistraction);
 
     res.json({
-      student: { id: student.id, name: student.name, email: student.email },
+      student: { id: student.id, name: student.name, email: student.email, class: student.class, year: student.year },
       submissions: student.submissions,
       solvedProblems,
       distractionSummaries: student.distractionSummaries,

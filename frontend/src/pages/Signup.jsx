@@ -7,6 +7,8 @@ export default function Signup() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [studentClass, setStudentClass] = useState('');
+  const [year, setYear] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -17,7 +19,7 @@ export default function Signup() {
     setError('');
 
     try {
-      const { data } = await api.post('/auth/signup', { name, email, password });
+      const { data } = await api.post('/auth/signup', { name, email, password, class: studentClass || undefined, year: year || undefined });
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       navigate('/student');
@@ -81,6 +83,41 @@ export default function Signup() {
               placeholder="••••••••"
               minLength={6}
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Class</label>
+              <select
+                value={studentClass}
+                onChange={(e) => setStudentClass(e.target.value)}
+                className="w-full lc-input bg-input border-border text-foreground focus:border-brand"
+              >
+                <option value="">Select Class</option>
+                <option value="BSIT">BSIT</option>
+                <option value="BSCS">BSCS</option>
+                <option value="BSIS">BSIS</option>
+                <option value="BSBA">BSBA</option>
+                <option value="BSA">BSA</option>
+                <option value="BSCE">BSCE</option>
+                <option value="BSEE">BSEE</option>
+                <option value="BSME">BSME</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-muted uppercase tracking-widest mb-2">Year</label>
+              <select
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                className="w-full lc-input bg-input border-border text-foreground focus:border-brand"
+              >
+                <option value="">Select Year</option>
+                <option value="1st Year">1st Year</option>
+                <option value="2nd Year">2nd Year</option>
+                <option value="3rd Year">3rd Year</option>
+                <option value="4th Year">4th Year</option>
+              </select>
+            </div>
           </div>
 
           <button

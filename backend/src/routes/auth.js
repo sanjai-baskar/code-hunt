@@ -14,7 +14,7 @@ console.log('[auth] DATABASE_URL present:', !!process.env.DATABASE_URL);
 // POST /api/auth/signup
 router.post('/signup', async (req, res) => {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name, class: studentClass, year } = req.body;
 
     if (!email || !password || !name) {
       return res.status(400).json({ error: 'All fields are required' });
@@ -31,19 +31,21 @@ router.post('/signup', async (req, res) => {
         email,
         password: hashedPassword,
         name,
-        role: 'student', // Default role for signup
+        class: studentClass || null,
+        year: year || null,
+        role: 'student',
       },
     });
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, name: user.name },
+      { id: user.id, email: user.email, role: user.role, name: user.name, class: user.class, year: user.year },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
 
     res.status(201).json({
       token,
-      user: { id: user.id, email: user.email, role: user.role, name: user.name },
+      user: { id: user.id, email: user.email, role: user.role, name: user.name, class: user.class, year: user.year },
     });
   } catch (err) {
     console.error('Signup error:', err);

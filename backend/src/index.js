@@ -12,6 +12,7 @@ const logRoutes = require('./routes/logs');
 const adminRoutes = require('./routes/admin');
 const settingsRoutes = require('./routes/settings');
 const contestRoutes = require('./routes/contests');
+const studentRoutes = require('./routes/student');
 
 const path = require('path');
 
@@ -40,6 +41,7 @@ app.use(['/api/logs', '/logs'], logRoutes);
 app.use(['/api/admin', '/admin'], adminRoutes);
 app.use(['/api/settings', '/settings'], settingsRoutes);
 app.use(['/api/contests', '/contests'], contestRoutes);
+app.use(['/api/student', '/student'], studentRoutes);
 
 // SPA Catch-all: If it's not an API call, serve the index.html
 app.get('*', (req, res, next) => {
