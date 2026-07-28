@@ -157,19 +157,6 @@ async function main() {
   });
   console.log('✅ Admin created:', admin.email);
 
-  const studentPassword = await bcrypt.hash('student123', 10);
-  const student = await prisma.user.upsert({
-    where: { email: 'student@codehunt.com' },
-    update: {},
-    create: {
-      email: 'student@codehunt.com',
-      password: studentPassword,
-      name: 'Demo Student',
-      role: 'student',
-    },
-  });
-  console.log('✅ Student created:', student.email);
-
   for (const p of problems) {
     const existing = await prisma.problem.findFirst({ where: { title: p.title } });
     if (!existing) {
