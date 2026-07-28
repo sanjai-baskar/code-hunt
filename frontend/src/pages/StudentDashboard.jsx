@@ -30,7 +30,7 @@ export default function StudentDashboard() {
       localStorage.setItem('user', JSON.stringify(updatedUser));
       setShowProfileModal(false);
     } catch (e) {
-      alert('Failed to save profile');
+      alert('Failed to save profile: ' + (e.response?.data?.error || e.response?.data?.details || e.message));
     } finally {
       setSavingProfile(false);
     }
