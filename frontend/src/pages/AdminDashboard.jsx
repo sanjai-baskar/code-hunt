@@ -23,6 +23,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [webcamEnabled, setWebcamEnabled] = useState(true);
   const [webcamToggling, setWebcamToggling] = useState(false);
+  const [yearFilter, setYearFilter] = useState('');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -30,7 +31,7 @@ export default function AdminDashboard() {
       // Use individual try-catches or allSettled to be more resilient
       const results = await Promise.allSettled([
         api.get(`/problems?t=${Date.now()}`),
-        api.get(`/admin/students?t=${Date.now()}`),
+        api.get(`/admin/students?t=${Date.now()}${yearFilter ? `&year=${yearFilter}` : ''}`),
         api.get(`/admin/settings?t=${Date.now()}`),
         api.get(`/contests?t=${Date.now()}`),
       ]);
@@ -45,7 +46,7 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [yearFilter]);
 
   useEffect(() => { 
     fetchData(); 
@@ -261,7 +262,20 @@ export default function AdminDashboard() {
         {/* Students Tab */}
         {activeTab === 'students' && (
           <div>
-            <h2 className="text-lg font-semibold text-foreground mb-4">Registered Students</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-foreground">Registered Students</h2>
+              <select
+                value={yearFilter}
+                onChange={(e) => setYearFilter(e.target.value)}
+                className="lc-input bg-input border-border text-foreground focus:border-brand text-sm px-3 py-2 rounded-lg"
+              >
+                <option value="">All Years</option>
+                <option value="1st Year">1st Year</option>
+                <option value="2nd Year">2nd Year</option>
+                <option value="3rd Year">3rd Year</option>
+                <option value="4th Year">4th Year</option>
+              </select>
+            </div>
             <div className="space-y-3">
               {students.map((s) => (
                 <div key={s.id} className="lc-card p-5 border-border bg-surface">
@@ -269,6 +283,11 @@ export default function AdminDashboard() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-1 flex-wrap">
                         <p className="text-foreground font-bold">{s.name}</p>
+                        {(s.class || s.year) && (
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-brand/10 text-brand border border-brand/20">
+                            {s.class}{s.class && s.year ? ' · ' : ''}{s.year}
+                          </span>
+                        )}
                         {/* Distraction Badge */}
                         <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${s.hadDistraction ? 'bg-red-500/15 text-red-500' : 'bg-green-500/15 text-green-500'}`}>
                           {s.hadDistraction ? `⚠️ ${s.totalDistractions} distraction${s.totalDistractions !== 1 ? 's' : ''}` : '✅ Clean'}

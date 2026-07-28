@@ -26,6 +26,9 @@ export default function StudentLogsModal({ student, onClose }) {
           <div>
             <h2 className="text-xl font-bold text-foreground">{student.name}</h2>
             <p className="text-sm text-muted">{student.email}</p>
+            {(student.class || student.year) && (
+              <p className="text-xs text-brand font-medium mt-1">{student.class}{student.class && student.year ? ' · ' : ''}{student.year}</p>
+            )}
           </div>
           <button onClick={onClose} className="text-muted hover:text-foreground text-xl transition-colors">✕</button>
         </div>
