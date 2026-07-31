@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import * as XLSX from 'xlsx';
 import api from '../api/client';
 
 export default function StudentLogsModal({ student, onClose }) {
@@ -17,6 +18,52 @@ export default function StudentLogsModal({ student, onClose }) {
     Hard: { bg: 'rgba(239,68,68,0.12)', color: '#ef4444' },
   };
 
+  const downloadStudentDataExcel = () => {
+    if (!data) return;
+    const rows = [
+      {
+        'Field': 'Student Name',
+        'Value': student.name || ''
+      },
+      {
+        'Field': 'Email',
+        'Value': student.email || ''
+      },
+      {
+        'Field': 'Class',
+        'Value': student.class || ''
+      },
+      {
+        'Field': 'Year',
+        'Value': student.year || ''
+      },
+      {
+        'Field': 'Had Distraction',
+        'Value': data.hadDistraction ? 'Yes' : 'No'
+      },
+      {
+        'Field': 'Total Distractions',
+        'Value': data.totalDistractions || 0
+      },
+      {
+        'Field': 'Number of Solved Problems',
+        'Value': data.solvedProblems?.length || 0
+      },
+      {
+        'Field': 'Number of All Submissions',
+        'Value': data.submissions?.length || 0
+      }
+    ];
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Student Profile');
+    const colWidths = [
+      { wch: 25 }, { wch: 30 }
+    ];
+    ws['!cols'] = colWidths;
+    XLSX.writeFile(wb, `${student.name.replace(/[^\w\-_.]/g, '_')}_profile_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="lc-card w-full max-w-2xl max-h-[90vh] flex flex-col bg-surface border-border animate-fade-in">
@@ -30,7 +77,17 @@ export default function StudentLogsModal({ student, onClose }) {
               <p className="text-xs text-brand font-medium mt-1">{student.class}{student.class && student.year ? ' · ' : ''}{student.year}</p>
             )}
           </div>
-          <button onClick={onClose} className="text-muted hover:text-foreground text-xl transition-colors">✕</button>
+          <div className="flex items-center gap-2">
+            <button
+              id="download-student-excel-btn"
+              onClick={downloadStudentDataExcel}
+              className="lc-btn-primary flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              Download Excel
+            </button>
+            <button onClick={onClose} className="text-muted hover:text-foreground text-xl transition-colors">✕</button>
+          </div>
         </div>
 
         {loading ? (
