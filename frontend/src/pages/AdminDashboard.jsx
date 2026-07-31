@@ -29,7 +29,6 @@ export default function AdminDashboard() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Use individual try-catches or allSettled to be more resilient
       const results = await Promise.allSettled([
         api.get(`/problems?t=${Date.now()}`),
         api.get(`/admin/students?t=${Date.now()}${yearFilter ? `&year=${yearFilter}` : ''}`),
@@ -76,15 +75,12 @@ export default function AdminDashboard() {
     const nextState = !webcamEnabled;
     
     setWebcamToggling(true);
-    // Optimistic update
     setWebcamEnabled(nextState);
     
     try {
       const res = await api.post('/admin/settings/webcam', { webcamEnabled: nextState });
-      // Sync with server response
       setWebcamEnabled(res.data.webcamEnabled);
     } catch (err) {
-      // Rollback on error
       setWebcamEnabled(!nextState);
       alert('Failed to update webcam setting: ' + (err.response?.data?.error || err.message));
     } finally {
@@ -161,6 +157,7 @@ export default function AdminDashboard() {
           <p className="text-sm md:text-base text-muted">Manage problems and monitor student activity.</p>
         </div>
 
+        {/* Webcam Toggle */}
         <div className={`lc-card p-4 md:p-5 mb-6 md:mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border ${webcamEnabled ? 'border-green-500/30 bg-green-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
           <div className="flex items-center gap-3 md:gap-4">
             <span className="text-2xl md:text-3xl">{webcamEnabled ? '📷' : '🚫'}</span>
@@ -182,6 +179,7 @@ export default function AdminDashboard() {
           </button>
         </div>
 
+        {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
           {[
             { label: 'Total Problems', value: problems.length, icon: '📝' },
@@ -199,6 +197,7 @@ export default function AdminDashboard() {
           ))}
         </div>
 
+        {/* Tabs */}
         <div className="flex gap-1 md:gap-2 mb-6 overflow-x-auto scrollbar-hide pb-1">
           {['problems', 'contests', 'students', 'leaderboard'].map((tab) => (
             <button key={tab} id={`tab-${tab}`} onClick={() => setActiveTab(tab)}
@@ -212,7 +211,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Problems Tab */}
-{activeTab === 'problems' && (
+        {activeTab === 'problems' && (
           <div>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold text-foreground">Coding Problems</h2>
@@ -245,6 +244,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* Contests Tab */}
         {activeTab === 'contests' && (
           <div>
             <div className="flex justify-between items-center mb-4">
@@ -281,6 +281,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* Students Tab */}
         {activeTab === 'students' && (
           <div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
@@ -360,6 +361,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* Leaderboard Tab */}
         {activeTab === 'leaderboard' && (
           <div>
             <h2 className="text-lg font-semibold text-foreground mb-4">Contest Leaderboards</h2>
@@ -385,170 +387,6 @@ export default function AdminDashboard() {
                         {new Date(c.startTime).toLocaleString()}
                       </p>
                       <p className="text-[10px] md:text-xs text-brand font-medium mt-1">
-                        {c._count?.problems || 0} Problems
-                      </p>
-                    </button>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {selectedLeaderboardContest && (
-              <div>
-                <Leaderboard contestId={selectedLeaderboardContest} />
-              </div>
-            )}
-          </div>
-        )}
-            </div>
-          </div>
-        )}
-
-        {/* Contests Tab */}
-        {activeTab === 'contests' && (
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-foreground">Contests</h2>
-              <button id="add-contest-btn" onClick={() => { setEditingContest(null); setShowContestForm(true); }}
-                className="lc-btn-primary px-4 py-2 text-sm !py-2">
-                + Add Contest
-              </button>
-            </div>
-
-            <div className="bg-surface border-border border rounded-xl overflow-hidden">
-              {contests.map((c) => (
-                <div key={c.id} className="p-4 border-b border-border flex items-center justify-between hover:bg-background/50 transition-colors">
-                  <div className="min-w-0">
-                    <p className="text-foreground font-bold mb-1">{c.title}</p>
-                    <p className="text-xs text-muted mb-2">
-                      {new Date(c.startTime).toLocaleString()} - {new Date(c.endTime).toLocaleString()}
-                    </p>
-                    <p className="text-sm text-muted mb-2 line-clamp-2">{c.description || 'No description available.'}</p>
-                    <p className="text-xs text-brand font-medium">
-                      {c._count?.problems || 0} Problems
-                    </p>
-                  </div>
-                  <div className="flex gap-4">
-                    <button onClick={() => { setEditingContest(c); setShowContestForm(true); }} className="text-blue-500 hover:text-blue-400 text-sm font-medium transition-colors">Edit</button>
-                    <button onClick={() => deleteContest(c.id)} className="text-red-500 hover:text-red-400 text-sm font-medium transition-colors">Delete</button>
-                  </div>
-                </div>
-              ))}
-              {contests.length === 0 && (
-                <div className="p-8 text-center text-muted">No contests created yet.</div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Students Tab */}
-        {activeTab === 'students' && (
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-foreground">Registered Students</h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={downloadStudentsExcel}
-                  className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg border border-green-500/30 bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-colors font-medium"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                  Download Excel
-                </button>
-                <select
-                  value={yearFilter}
-                  onChange={(e) => setYearFilter(e.target.value)}
-                  className="lc-input bg-input border-border text-foreground focus:border-brand text-sm px-3 py-2 rounded-lg"
-                >
-                  <option value="">All Years</option>
-                  <option value="I">I</option>
-                  <option value="II">II</option>
-                  <option value="III">III</option>
-                </select>
-              </div>
-            </div>
-            <div className="space-y-3">
-              {students.map((s) => (
-                <div key={s.id} className="lc-card p-5 border-border bg-surface">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-1 flex-wrap">
-                        <p className="text-foreground font-bold">{s.name}</p>
-                        {(s.class || s.year) && (
-                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-brand/10 text-brand border border-brand/20">
-                            {s.class}{s.class && s.year ? ' · ' : ''}{s.year}
-                          </span>
-                        )}
-                        {/* Distraction Badge */}
-                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${s.hadDistraction ? 'bg-red-500/15 text-red-500' : 'bg-green-500/15 text-green-500'}`}>
-                          {s.hadDistraction ? `⚠️ ${s.totalDistractions} distraction${s.totalDistractions !== 1 ? 's' : ''}` : '✅ Clean'}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted mb-3">{s.email}</p>
-
-                      {/* Solved Problems */}
-                      <div>
-                        <p className="text-xs text-muted font-bold uppercase tracking-wider mb-2">
-                          Solved {s.solvedCount} problem{s.solvedCount !== 1 ? 's' : ''}
-                        </p>
-                        {s.solvedCount > 0 ? (
-                          <div className="flex flex-wrap gap-2">
-                            {s.solvedProblems.map(sub => (
-                              <span
-                                key={sub.id}
-                                style={{ background: DIFF_COLORS[sub.problem.difficulty]?.bg, color: DIFF_COLORS[sub.problem.difficulty]?.color }}
-                                className="text-xs px-2.5 py-1 rounded-full font-medium border border-current/20"
-                              >
-                                {sub.problem.title}
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-xs text-muted italic">No problems solved yet.</p>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setSelectedStudent(s)}
-                      className="bg-background border border-border text-foreground text-sm px-4 py-2 rounded hover:border-brand transition-colors font-medium shrink-0"
-                    >
-                      Details
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {students.length === 0 && (
-                <div className="p-8 text-center text-muted lc-card bg-surface border-border">No students registered yet.</div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Leaderboard Tab */}
-        {activeTab === 'leaderboard' && (
-          <div>
-            <h2 className="text-lg font-semibold text-foreground mb-4">Contest Leaderboards</h2>
-            
-            <div className="mb-6">
-              <p className="text-sm text-muted mb-3">Select a contest to view leaderboard:</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {contests.length === 0 ? (
-                  <p className="text-sm text-muted col-span-full">No contests available.</p>
-                ) : (
-                  contests.map((c) => (
-                    <button
-                      key={c.id}
-                      onClick={() => setSelectedLeaderboardContest(c.id)}
-                      className={`p-4 text-left rounded-lg border transition-all ${
-                        selectedLeaderboardContest === c.id
-                          ? 'border-brand bg-brand/10'
-                          : 'border-border bg-surface hover:border-brand/50'
-                      }`}
-                    >
-                      <p className="font-bold text-foreground">{c.title}</p>
-                      <p className="text-xs text-muted mt-1">
-                        {new Date(c.startTime).toLocaleString()}
-                      </p>
-                      <p className="text-xs text-brand font-medium mt-1">
                         {c._count?.problems || 0} Problems
                       </p>
                     </button>
