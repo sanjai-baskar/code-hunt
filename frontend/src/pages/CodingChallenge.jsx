@@ -93,12 +93,7 @@ export default function CodingChallenge() {
           addToast('⚠️ You left the exam window. You may rejoin once.');
         } else {
           setIsDisqualified(true);
-          addToast('❌ Multiple window switches detected — session terminated.', 'error');
-          setTimeout(() => {
-            alert('SECURITY VIOLATION: Multiple tab/window switches detected. Your session has been terminated.');
-            localStorage.clear();
-            window.location.href = '/login';
-          }, 800);
+          addToast('❌ Multiple window switches detected. The page will remain open.', 'error');
         }
         return next;
       });
@@ -233,9 +228,7 @@ export default function CodingChallenge() {
     if (direction === 'camera-off') {
       setIsDisqualified(true);
       api.post('/logs', { problemId: id }).catch(() => {});
-      alert('Camera access was lost. Your session has been terminated.');
-      localStorage.clear();
-      window.location.href = '/login';
+      addToast('⚠️ Camera access was lost. Please re-enable your camera to continue.', 'error');
       return;
     }
 
@@ -265,15 +258,32 @@ export default function CodingChallenge() {
 
   const runCode = async () => {
     setRunLoading(true);
+    setTestResults(null);
     try {
       const payload = { code, problemId: id, language };
       const { data } = await api.post('/run', payload);
       setTestResults(data);
       // Auto-switch to console tab on mobile after running
       setMobileTab('console');
-      addToast(data.allPassed ? 'Execution complete!' : 'Execution failed.', data.allPassed ? 'success' : 'warn');
+      addToast(data.allPassed ? 'Execution complete!' : 'Execution completed with warnings/errors.', data.allPassed ? 'success' : 'warn');
     } catch (err) {
-      addToast('Error running code.', 'error');
+      console.error('Run error:', err);
+      const errMsg = err.response?.data?.error || err.message || 'Error executing code.';
+      setTestResults({
+        results: [
+          {
+            input: 'Code Execution',
+            expected: 'No Runtime Error',
+            actual: errMsg,
+            passed: false,
+            error: `Execution Error: ${errMsg}`,
+            time: null
+          }
+        ],
+        summary: { passed: 0, total: 1 }
+      });
+      setMobileTab('console');
+      addToast(`Execution Error: ${errMsg}`, 'error');
     } finally {
       setRunLoading(false);
     }
@@ -285,16 +295,35 @@ export default function CodingChallenge() {
       const { data } = await api.post('/submit', { code, problemId: id, distractionCount, language });
       setSubmitResult(data);
       setSubmitted(true);
+      if (data.results) {
+        setTestResults({ results: data.results, summary: data.summary });
+      }
       stop();
+      setMobileTab('console');
       addToast(
         data.allPassed
           ? `✅ Submitted! ${data.summary?.passed ?? 0}/${data.summary?.total ?? 0} test cases passed.`
-          : `⚠️ Submitted. Only ${data.summary?.passed ?? 0}/${data.summary?.total ?? 0} test cases passed.`,
+          : `⚠️ Submitted. ${data.summary?.passed ?? 0}/${data.summary?.total ?? 0} test cases passed.`,
         data.allPassed ? 'success' : 'warn'
       );
-      setTimeout(() => navigate('/student'), 2000);
     } catch (err) {
-      addToast('Submission failed.', 'error');
+      console.error('Submission error:', err);
+      const errMsg = err.response?.data?.error || err.message || 'Submission failed.';
+      setTestResults({
+        results: [
+          {
+            input: 'Code Submission',
+            expected: 'Successful Submission',
+            actual: errMsg,
+            passed: false,
+            error: `Submission Error: ${errMsg}`,
+            time: null
+          }
+        ],
+        summary: { passed: 0, total: 1 }
+      });
+      setMobileTab('console');
+      addToast(`Submission Error: ${errMsg}`, 'error');
     } finally {
       setSubmitLoading(false);
     }
@@ -362,6 +391,36 @@ export default function CodingChallenge() {
                 className="px-5 py-3 rounded font-bold bg-red-600 text-white hover:bg-red-500 transition-colors"
               >
                 Return to Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Security Violation / Error Overlay (Does NOT close the page) ── */}
+      {isDisqualified && (
+        <div className="fixed inset-0 z-[25000] bg-background/90 backdrop-blur flex items-center justify-center p-4 text-center">
+          <div className="max-w-md w-full lc-card p-6 sm:p-8 border-2 border-red-500 bg-surface shadow-2xl">
+            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/30">
+              <span className="text-3xl">⚠️</span>
+            </div>
+            <h2 className="text-xl font-bold text-red-500 mb-2">Proctoring Notice / Error</h2>
+            <p className="text-sm text-foreground mb-6 leading-relaxed">
+              An issue occurred (e.g. camera stream lost or window switch warning).
+              <br/><br/>
+              <strong>Your page and coding environment will remain open.</strong>
+            </p>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  setIsDisqualified(false);
+                  if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(() => {});
+                  }
+                }}
+                className="lc-btn-primary py-3 font-bold bg-red-600 hover:bg-red-500 text-white"
+              >
+                Resume Coding Arena
               </button>
             </div>
           </div>
@@ -502,23 +561,59 @@ export default function CodingChallenge() {
               <CodeEditor value={code} onChange={setCode} language={language} />
             </div>
             {testResults && (
-              <div className="h-[30%] bg-[#0d1117] rounded-lg border border-border p-4 overflow-y-auto font-mono text-xs">
-                <h3 className="text-[10px] font-bold text-muted uppercase mb-3 tracking-wider">Console Output</h3>
-                <div className="space-y-3">
+              <div className="h-[35%] bg-[#0d1117] rounded-lg border border-border p-4 overflow-y-auto font-mono text-xs">
+                <div className="flex items-center justify-between mb-3 border-b border-gray-800 pb-2">
+                  <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Console Output &amp; Errors</h3>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                    testResults.summary?.passed === testResults.summary?.total
+                      ? 'bg-green-500/20 text-green-400'
+                      : 'bg-red-500/20 text-red-400'
+                  }`}>
+                    {testResults.summary?.passed ?? 0}/{testResults.summary?.total ?? 0} Test Cases Passed
+                  </span>
+                </div>
+                <div className="space-y-4">
                   {testResults.results.map((res, idx) => (
-                    <div key={idx}>
-                      <span className={`text-[10px] font-bold uppercase tracking-wider ${res.passed ? 'text-green-400' : 'text-red-400'}`}>
-                        {'▶ Test Case #'}{idx + 1} {res.passed ? '✓' : '✗'}
-                      </span>
-                      {res.actual ? (
-                        <pre className={`mt-1 whitespace-pre-wrap break-all leading-relaxed ${res.error ? 'text-red-300' : 'text-green-300'}`}>
-                          {res.actual}
-                        </pre>
-                      ) : (
-                        <p className="text-muted italic mt-1">(no output)</p>
+                    <div key={idx} className="bg-black/30 p-3 rounded border border-gray-800">
+                      <div className="flex items-center justify-between">
+                        <span className={`text-[11px] font-bold uppercase tracking-wider ${res.passed ? 'text-green-400' : 'text-red-400'}`}>
+                          ▶ Test Case #{idx + 1} {res.passed ? '✓' : '✗'}
+                        </span>
+                        {res.time != null && (
+                          <span className="text-[9px] text-gray-500">Exec: {Math.round(res.time)}ms</span>
+                        )}
+                      </div>
+                      
+                      {res.input && (
+                        <div className="mt-2 text-[11px] text-gray-400">
+                          <span className="text-gray-500">Input: </span>
+                          <span className="text-gray-200">{res.input}</span>
+                        </div>
                       )}
-                      {res.time != null && (
-                        <p className="text-[9px] text-muted mt-0.5">Exec: {Math.round(res.time)}ms</p>
+
+                      {res.actual ? (
+                        <div className="mt-1.5">
+                          <span className="text-[10px] text-gray-500 block">Actual Output / Log:</span>
+                          <pre className={`mt-0.5 p-2 rounded whitespace-pre-wrap break-all leading-relaxed ${res.error ? 'bg-red-950/50 text-red-300 border border-red-900/50' : 'bg-gray-900 text-green-300'}`}>
+                            {res.actual}
+                          </pre>
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 italic mt-1">(no output)</p>
+                      )}
+
+                      {res.error && (
+                        <div className="mt-2 p-2 bg-red-950/70 border border-red-800 rounded">
+                          <span className="text-[10px] font-bold text-red-400 block mb-1">🚨 Compilation / Stderr Error Details:</span>
+                          <pre className="text-red-300 text-[11px] whitespace-pre-wrap break-all leading-relaxed">{res.error}</pre>
+                        </div>
+                      )}
+
+                      {!res.passed && res.expected && (
+                        <div className="mt-1.5 text-[11px] text-gray-400">
+                          <span className="text-gray-500">Expected: </span>
+                          <span className="text-green-400 font-mono">{res.expected}</span>
+                        </div>
                       )}
                     </div>
                   ))}
@@ -570,22 +665,58 @@ export default function CodingChallenge() {
             <div className="flex-1 overflow-y-auto bg-[#0d1117] p-4 font-mono text-xs">
               {testResults ? (
                 <>
-                  <h3 className="text-[10px] font-bold text-muted uppercase mb-3 tracking-wider">Console Output</h3>
+                  <div className="flex items-center justify-between mb-3 border-b border-gray-800 pb-2">
+                    <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Console Output &amp; Errors</h3>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                      testResults.summary?.passed === testResults.summary?.total
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-red-500/20 text-red-400'
+                    }`}>
+                      {testResults.summary?.passed ?? 0}/{testResults.summary?.total ?? 0} Passed
+                    </span>
+                  </div>
                   <div className="space-y-4">
                     {testResults.results.map((res, idx) => (
-                      <div key={idx}>
-                        <span className={`text-[10px] font-bold uppercase tracking-wider ${res.passed ? 'text-green-400' : 'text-red-400'}`}>
-                          ▶ Test Case #{idx + 1} {res.passed ? '✓' : '✗'}
-                        </span>
-                        {res.actual ? (
-                          <pre className={`mt-1 whitespace-pre-wrap break-all leading-relaxed ${res.error ? 'text-red-300' : 'text-green-300'}`}>
-                            {res.actual}
-                          </pre>
-                        ) : (
-                          <p className="text-muted italic mt-1">(no output)</p>
+                      <div key={idx} className="bg-black/30 p-3 rounded border border-gray-800">
+                        <div className="flex items-center justify-between">
+                          <span className={`text-[11px] font-bold uppercase tracking-wider ${res.passed ? 'text-green-400' : 'text-red-400'}`}>
+                            ▶ Test Case #{idx + 1} {res.passed ? '✓' : '✗'}
+                          </span>
+                          {res.time != null && (
+                            <span className="text-[9px] text-gray-500">Exec: {Math.round(res.time)}ms</span>
+                          )}
+                        </div>
+
+                        {res.input && (
+                          <div className="mt-2 text-[11px] text-gray-400">
+                            <span className="text-gray-500">Input: </span>
+                            <span className="text-gray-200">{res.input}</span>
+                          </div>
                         )}
-                        {res.time != null && (
-                          <p className="text-[9px] text-muted mt-0.5">Exec: {Math.round(res.time)}ms</p>
+
+                        {res.actual ? (
+                          <div className="mt-1.5">
+                            <span className="text-[10px] text-gray-500 block">Actual Output / Log:</span>
+                            <pre className={`mt-0.5 p-2 rounded whitespace-pre-wrap break-all leading-relaxed ${res.error ? 'bg-red-950/50 text-red-300 border border-red-900/50' : 'bg-gray-900 text-green-300'}`}>
+                              {res.actual}
+                            </pre>
+                          </div>
+                        ) : (
+                          <p className="text-gray-500 italic mt-1">(no output)</p>
+                        )}
+
+                        {res.error && (
+                          <div className="mt-2 p-2 bg-red-950/70 border border-red-800 rounded">
+                            <span className="text-[10px] font-bold text-red-400 block mb-1">🚨 Compilation / Stderr Error Details:</span>
+                            <pre className="text-red-300 text-[11px] whitespace-pre-wrap break-all leading-relaxed">{res.error}</pre>
+                          </div>
+                        )}
+
+                        {!res.passed && res.expected && (
+                          <div className="mt-1.5 text-[11px] text-gray-400">
+                            <span className="text-gray-500">Expected: </span>
+                            <span className="text-green-400 font-mono">{res.expected}</span>
+                          </div>
                         )}
                       </div>
                     ))}
@@ -597,7 +728,7 @@ export default function CodingChallenge() {
               ) : (
                 <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
                   <span className="text-3xl">🖥</span>
-                  <p className="text-muted text-sm">Run your code to see output here.</p>
+                  <p className="text-muted text-sm">Run your code to see output and compilation errors here.</p>
                   <button
                     onClick={() => setMobileTab('editor')}
                     className="mt-2 lc-btn-primary px-6 py-2 text-xs font-bold"

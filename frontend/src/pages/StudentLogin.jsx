@@ -4,8 +4,8 @@ import api from '../api/client';
 
 
 export default function StudentLogin() {
-  const [email, setEmail] = useState('student@codehunt.com');
-  const [password, setPassword] = useState('student123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();

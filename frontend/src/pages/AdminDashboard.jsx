@@ -121,7 +121,7 @@ export default function AdminDashboard() {
     try {
       const todayStr = new Date().toISOString().slice(0, 10);
       const res = await api.get(`/admin/daily-report${yearFilter ? `?year=${yearFilter}` : ''}`);
-      const { submissions = [], logs = [] } = res.data || {};
+      const { submissions = [], distractionSummaries = [] } = res.data || {};
 
       const wb = XLSX.utils.book_new();
 
@@ -148,36 +148,38 @@ export default function AdminDashboard() {
       const subRows = submissions.map((sub, idx) => ({
         'S.No': idx + 1,
         'Date & Time': new Date(sub.timestamp).toLocaleString(),
-        'Student Name': sub.user?.name || '',
-        'Email': sub.user?.email || '',
-        'Class': sub.user?.class || '',
-        'Year': sub.user?.year || '',
+        'Student Name': sub.student?.name || '',
+        'Email': sub.student?.email || '',
+        'Class': sub.student?.class || '',
+        'Year': sub.student?.year || '',
         'Problem Title': sub.problem?.title || '',
         'Difficulty': sub.problem?.difficulty || '',
         'Status': sub.passedTestCases ? 'PASSED ✅' : 'FAILED ❌',
         'Distraction Count': sub.distractionCount || 0,
       }));
-      const wsSubmissions = XLSX.utils.json_to_sheet(subRows.length > 0 ? subRows : [{ 'Message': 'No submissions recorded yet today.' }]);
+      const wsSubmissions = XLSX.utils.json_to_sheet(subRows.length > 0 ? subRows : [{ 'Message': 'No submissions recorded yet.' }]);
       wsSubmissions['!cols'] = [
         { wch: 6 }, { wch: 22 }, { wch: 22 }, { wch: 28 },
         { wch: 10 }, { wch: 8 }, { wch: 25 }, { wch: 12 }, { wch: 14 }, { wch: 18 },
       ];
       XLSX.utils.book_append_sheet(wb, wsSubmissions, 'Daily Submissions');
 
-      // Sheet 3: Proctor Warning Logs
-      const logRows = logs.map((log, idx) => ({
+      // Sheet 3: Proctor Warning Logs / Distraction Summaries
+      const logRows = distractionSummaries.map((d, idx) => ({
         'S.No': idx + 1,
-        'Date & Time': new Date(log.timestamp).toLocaleString(),
-        'Student Name': log.user?.name || '',
-        'Email': log.user?.email || '',
-        'Class': log.user?.class || '',
-        'Year': log.user?.year || '',
-        'Problem Title': log.problem?.title || '',
+        'Last Activity': new Date(d.lastUpdated).toLocaleString(),
+        'Student Name': d.student?.name || '',
+        'Email': d.student?.email || '',
+        'Class': d.student?.class || '',
+        'Year': d.student?.year || '',
+        'Problem Title': d.problem?.title || '',
+        'Had Distraction': d.hadDistraction ? 'Yes' : 'No',
+        'Distraction Events': d.distractionCount || 0,
       }));
       const wsLogs = XLSX.utils.json_to_sheet(logRows.length > 0 ? logRows : [{ 'Message': 'No proctor warning events recorded.' }]);
       wsLogs['!cols'] = [
         { wch: 6 }, { wch: 22 }, { wch: 22 }, { wch: 28 },
-        { wch: 10 }, { wch: 8 }, { wch: 25 },
+        { wch: 10 }, { wch: 8 }, { wch: 25 }, { wch: 16 }, { wch: 18 }
       ];
       XLSX.utils.book_append_sheet(wb, wsLogs, 'Proctor Warnings');
 

@@ -81,12 +81,12 @@ router.get('/students', authenticateToken, requireAdmin, async (req, res) => {
 router.get('/daily-report', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { date, year } = req.query;
-    const userWhere = { role: 'student' };
-    if (year) userWhere.year = year;
+    const studentWhere = {};
+    if (year) studentWhere.year = year;
 
     const submissions = await prisma.submission.findMany({
       where: {
-        user: userWhere,
+        student: studentWhere,
         ...(date ? {
           timestamp: {
             gte: new Date(`${date}T00:00:00.000Z`),
@@ -95,35 +95,36 @@ router.get('/daily-report', authenticateToken, requireAdmin, async (req, res) =>
         } : {})
       },
       include: {
-        user: { select: { id: true, name: true, email: true, class: true, year: true } },
+        student: { select: { id: true, name: true, email: true, class: true, year: true } },
         problem: { select: { id: true, title: true, difficulty: true } },
       },
       orderBy: { timestamp: 'desc' },
     });
 
-    const logs = await prisma.proctorLog.findMany({
+    const distractionSummaries = await prisma.distractionSummary.findMany({
       where: {
-        user: userWhere,
+        student: studentWhere,
         ...(date ? {
-          timestamp: {
+          lastUpdated: {
             gte: new Date(`${date}T00:00:00.000Z`),
             lte: new Date(`${date}T23:59:59.999Z`),
           }
         } : {})
       },
       include: {
-        user: { select: { id: true, name: true, email: true, class: true, year: true } },
-        problem: { select: { id: true, title: true } },
+        student: { select: { id: true, name: true, email: true, class: true, year: true } },
+        problem: { select: { id: true, title: true, difficulty: true } },
       },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { lastUpdated: 'desc' },
     });
 
-    res.json({ submissions, logs });
+    res.json({ submissions, distractionSummaries });
   } catch (err) {
-    console.error(err);
+    console.error('Daily report error:', err);
     res.status(500).json({ error: 'Internal server error', details: err.message });
   }
 });
+
 
 
 // GET /api/admin/student/:id — detailed profile for one student
