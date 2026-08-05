@@ -125,14 +125,24 @@ export default function CodingChallenge() {
     };
   }, [hasStarted, id, isDisqualified, submitted, overlayVisible, addToast]);
 
-  // copy/paste/right-click security
+  // copy/paste/cut/selectstart/right-click security
   useEffect(() => {
     if (!hasStarted || isDisqualified || submitted) return;
 
     const onCopy = (e) => {
       e.preventDefault();
+      if (e.clipboardData) {
+        e.clipboardData.setData('text/plain', '');
+      }
       setDistractionCount(prev => prev + 1);
       addToast(`⚠️ Forbidden action: Copy`, 'warn');
+      api.post('/logs', { problemId: id }).catch(() => {});
+    };
+
+    const onCut = (e) => {
+      e.preventDefault();
+      setDistractionCount(prev => prev + 1);
+      addToast(`⚠️ Forbidden action: Cut`, 'warn');
       api.post('/logs', { problemId: id }).catch(() => {});
     };
 
@@ -143,15 +153,39 @@ export default function CodingChallenge() {
       api.post('/logs', { problemId: id }).catch(() => {});
     };
 
+    const onSelectStart = (e) => {
+      // Prevent selection except on inputs/textareas if needed
+      if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+      }
+    };
+
+    const onSelectionChange = () => {
+      const selection = window.getSelection();
+      if (selection && selection.toString().length > 0) {
+        const anchor = selection.anchorNode;
+        // If selection is inside problem description or body, clear it
+        if (anchor && (anchor.nodeType === 3 || anchor.nodeType === 1)) {
+          selection.removeAllRanges();
+        }
+      }
+    };
+
     const onContext = (e) => { e.preventDefault(); };
 
     document.addEventListener('copy', onCopy);
+    document.addEventListener('cut', onCut);
     document.addEventListener('paste', onPaste);
+    document.addEventListener('selectstart', onSelectStart);
+    document.addEventListener('selectionchange', onSelectionChange);
     document.addEventListener('contextmenu', onContext);
 
     return () => {
       document.removeEventListener('copy', onCopy);
+      document.removeEventListener('cut', onCut);
       document.removeEventListener('paste', onPaste);
+      document.removeEventListener('selectstart', onSelectStart);
+      document.removeEventListener('selectionchange', onSelectionChange);
       document.removeEventListener('contextmenu', onContext);
     };
   }, [hasStarted, id, isDisqualified, submitted, addToast]);
