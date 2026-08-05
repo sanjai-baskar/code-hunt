@@ -77,6 +77,55 @@ router.get('/students', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
+// GET /api/admin/daily-report — comprehensive daily report of student activities & submissions
+router.get('/daily-report', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { date, year } = req.query;
+    const userWhere = { role: 'student' };
+    if (year) userWhere.year = year;
+
+    const submissions = await prisma.submission.findMany({
+      where: {
+        user: userWhere,
+        ...(date ? {
+          timestamp: {
+            gte: new Date(`${date}T00:00:00.000Z`),
+            lte: new Date(`${date}T23:59:59.999Z`),
+          }
+        } : {})
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true, class: true, year: true } },
+        problem: { select: { id: true, title: true, difficulty: true } },
+      },
+      orderBy: { timestamp: 'desc' },
+    });
+
+    const logs = await prisma.proctorLog.findMany({
+      where: {
+        user: userWhere,
+        ...(date ? {
+          timestamp: {
+            gte: new Date(`${date}T00:00:00.000Z`),
+            lte: new Date(`${date}T23:59:59.999Z`),
+          }
+        } : {})
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true, class: true, year: true } },
+        problem: { select: { id: true, title: true } },
+      },
+      orderBy: { timestamp: 'desc' },
+    });
+
+    res.json({ submissions, logs });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
+
+
 // GET /api/admin/student/:id — detailed profile for one student
 router.get('/student/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {

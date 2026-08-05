@@ -108,14 +108,87 @@ export default function AdminDashboard() {
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Students');
+    XLSX.utils.book_append_sheet(wb, ws, 'Students Summary');
     const colWidths = [
       { wch: 6 }, { wch: 22 }, { wch: 30 }, { wch: 14 },
       { wch: 8 }, { wch: 16 }, { wch: 18 }, { wch: 14 }, { wch: 14 },
     ];
     ws['!cols'] = colWidths;
-    XLSX.writeFile(wb, `students_${yearFilter || 'all'}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.writeFile(wb, `students_summary_${yearFilter || 'all'}_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
+
+  const downloadDailyReportExcel = async () => {
+    try {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const res = await api.get(`/admin/daily-report${yearFilter ? `?year=${yearFilter}` : ''}`);
+      const { submissions = [], logs = [] } = res.data || {};
+
+      const wb = XLSX.utils.book_new();
+
+      // Sheet 1: Master Student List & Progress
+      const studentRows = students.map((s, idx) => ({
+        'S.No': idx + 1,
+        'Student Name': s.name,
+        'Email': s.email,
+        'Class': s.class || '',
+        'Year': s.year || '',
+        'Solved Count': s.solvedCount,
+        'Total Distractions': s.totalDistractions,
+        'Had Distraction': s.hadDistraction ? 'Yes' : 'No',
+        'Registered Date': new Date(s.createdAt).toLocaleDateString(),
+      }));
+      const wsStudents = XLSX.utils.json_to_sheet(studentRows);
+      wsStudents['!cols'] = [
+        { wch: 6 }, { wch: 22 }, { wch: 28 }, { wch: 12 },
+        { wch: 8 }, { wch: 14 }, { wch: 18 }, { wch: 16 }, { wch: 16 },
+      ];
+      XLSX.utils.book_append_sheet(wb, wsStudents, 'Student Master');
+
+      // Sheet 2: Daily Submissions Detail
+      const subRows = submissions.map((sub, idx) => ({
+        'S.No': idx + 1,
+        'Date & Time': new Date(sub.timestamp).toLocaleString(),
+        'Student Name': sub.user?.name || '',
+        'Email': sub.user?.email || '',
+        'Class': sub.user?.class || '',
+        'Year': sub.user?.year || '',
+        'Problem Title': sub.problem?.title || '',
+        'Difficulty': sub.problem?.difficulty || '',
+        'Status': sub.passedTestCases ? 'PASSED ✅' : 'FAILED ❌',
+        'Distraction Count': sub.distractionCount || 0,
+      }));
+      const wsSubmissions = XLSX.utils.json_to_sheet(subRows.length > 0 ? subRows : [{ 'Message': 'No submissions recorded yet today.' }]);
+      wsSubmissions['!cols'] = [
+        { wch: 6 }, { wch: 22 }, { wch: 22 }, { wch: 28 },
+        { wch: 10 }, { wch: 8 }, { wch: 25 }, { wch: 12 }, { wch: 14 }, { wch: 18 },
+      ];
+      XLSX.utils.book_append_sheet(wb, wsSubmissions, 'Daily Submissions');
+
+      // Sheet 3: Proctor Warning Logs
+      const logRows = logs.map((log, idx) => ({
+        'S.No': idx + 1,
+        'Date & Time': new Date(log.timestamp).toLocaleString(),
+        'Student Name': log.user?.name || '',
+        'Email': log.user?.email || '',
+        'Class': log.user?.class || '',
+        'Year': log.user?.year || '',
+        'Problem Title': log.problem?.title || '',
+      }));
+      const wsLogs = XLSX.utils.json_to_sheet(logRows.length > 0 ? logRows : [{ 'Message': 'No proctor warning events recorded.' }]);
+      wsLogs['!cols'] = [
+        { wch: 6 }, { wch: 22 }, { wch: 22 }, { wch: 28 },
+        { wch: 10 }, { wch: 8 }, { wch: 25 },
+      ];
+      XLSX.utils.book_append_sheet(wb, wsLogs, 'Proctor Warnings');
+
+      XLSX.writeFile(wb, `students_daily_report_${todayStr}.xlsx`);
+    } catch (err) {
+      console.error('Failed to download daily report:', err);
+      alert('Failed to generate daily report. Standard export will be downloaded instead.');
+      downloadStudentsExcel();
+    }
+  };
+
 
   const DIFF_COLORS = {
     Easy: { bg: 'rgba(34,197,94,0.12)', color: '#22c55e' },
@@ -288,12 +361,19 @@ export default function AdminDashboard() {
               <h2 className="text-lg font-semibold text-foreground">Registered Students</h2>
               <div className="flex flex-wrap gap-2 w-full sm:w-auto sm:justify-end">
                 <button
-                  id="download-excel-btn"
-                  onClick={downloadStudentsExcel}
-                  className="lc-btn-primary flex items-center gap-1.5 px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm"
+                  id="download-daily-report-btn"
+                  onClick={downloadDailyReportExcel}
+                  className="lc-btn-primary flex items-center gap-1.5 px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm bg-green-600 hover:bg-green-500 shadow-md"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                  Download Excel
+                  📊 Daily Report Excel
+                </button>
+                <button
+                  id="download-excel-btn"
+                  onClick={downloadStudentsExcel}
+                  className="lc-btn-secondary flex items-center gap-1.5 px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm"
+                >
+                  Student Summary
                 </button>
                 <select
                   value={yearFilter}
