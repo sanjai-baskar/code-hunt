@@ -26,9 +26,10 @@ export default function AdminDashboard() {
   const [webcamToggling, setWebcamToggling] = useState(false);
   const [yearFilter, setYearFilter] = useState('');
   const yearFilterRef = useRef('');
+  const isMountedRef = useRef(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
+  const fetchData = useCallback(async (showSpinner = false) => {
+    if (showSpinner) setLoading(true);
     try {
       const filter = yearFilterRef.current;
       const results = await Promise.allSettled([
@@ -50,15 +51,19 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  // Only fetch on mount
+  // Only fetch on mount — show spinner only on initial load
   useEffect(() => {
-    fetchData();
+    fetchData(true);
   }, []);
 
-  // Re-fetch when year filter changes
+  // Re-fetch when year filter changes (skip first render)
   useEffect(() => {
     yearFilterRef.current = yearFilter;
-    fetchData();
+    if (!isMountedRef.current) {
+      isMountedRef.current = true;
+      return;
+    }
+    fetchData(false);
   }, [yearFilter]);
 
   const deleteProblem = async (id) => {
