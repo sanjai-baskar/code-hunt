@@ -29,7 +29,7 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 transition-colors duration-300">
-      <div className="max-w-md w-full lc-card p-8 border-border bg-surface relative overflow-hidden">
+      <div className="max-w-md w-full lc-card p-6 sm:p-8 border-border bg-surface relative overflow-hidden">
         {/* Decorative Top Border */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500" />
         

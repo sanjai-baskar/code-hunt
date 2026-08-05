@@ -110,31 +110,31 @@ export default function ContestPage() {
         </div>
       </nav>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* Contest Header */}
-        <div className="lc-card p-6 mb-8 border border-border bg-surface flex flex-col md:flex-row justify-between items-center gap-6">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground mb-2">{contest.title}</h2>
-            <p className="text-sm text-muted">{contest.description}</p>
-            <p className="text-xs text-muted mt-2">
+        <div className="lc-card p-4 md:p-6 mb-6 md:mb-8 border border-border bg-surface flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6">
+          <div className="w-full">
+            <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">{contest.title}</h2>
+            <p className="text-xs md:text-sm text-muted">{contest.description}</p>
+            <p className="text-[10px] md:text-xs text-muted mt-2">
               {new Date(contest.startTime).toLocaleString()} — {new Date(contest.endTime).toLocaleString()}
             </p>
           </div>
-          <div className="text-center md:text-right bg-background p-4 rounded-lg border border-border min-w-[200px]">
-            <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${
+          <div className="text-center md:text-right bg-background p-3 md:p-4 rounded-lg border border-border min-w-[160px] md:min-w-[200px] w-full md:w-auto">
+            <p className={`text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1 ${
               status === 'Active' ? 'text-green-500' : status === 'Upcoming' ? 'text-yellow-500' : 'text-gray-500'
             }`}>
               {status === 'Upcoming' ? 'Starts In' : status === 'Active' ? 'Ends In' : 'Status'}
             </p>
-            <p className="text-2xl font-mono font-bold text-foreground">{timeRemaining}</p>
+            <p className="text-xl md:text-2xl font-mono font-bold text-foreground">{timeRemaining}</p>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
           {['problems', ...(isAdmin ? ['leaderboard'] : [])].map((tab) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`px-6 py-2.5 rounded-lg text-sm font-bold capitalize transition-all border ${activeTab === tab
+              className={`shrink-0 px-4 md:px-6 py-2 md:py-2.5 rounded-lg text-xs md:text-sm font-bold capitalize transition-all border ${activeTab === tab
                 ? 'bg-brand/10 text-brand border-brand/30'
                 : 'bg-surface text-muted border-border hover:bg-background'
               }`}>
@@ -147,21 +147,21 @@ export default function ContestPage() {
         {activeTab === 'problems' && (
           <div>
             {status === 'Upcoming' ? (
-              <div className="lc-card p-12 text-center border border-border bg-surface">
-                <span className="text-4xl block mb-4">⏳</span>
-                <h3 className="text-xl font-bold text-foreground mb-2">Contest hasn't started yet!</h3>
-                <p className="text-muted">The challenges will be revealed once the countdown reaches zero.</p>
+              <div className="lc-card p-8 md:p-12 text-center border border-border bg-surface">
+                <span className="text-3xl md:text-4xl block mb-4">⏳</span>
+                <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">Contest hasn't started yet!</h3>
+                <p className="text-xs md:text-sm text-muted">The challenges will be revealed once the countdown reaches zero.</p>
               </div>
             ) : (
               <div className="bg-surface border border-border rounded-xl overflow-hidden">
                 {/* Past contest notice */}
                 {status === 'Past' && (
-                  <div className="bg-gray-500/10 border-b border-border px-5 py-3 text-xs text-muted flex flex-col gap-2">
+                  <div className="bg-gray-500/10 border-b border-border px-4 md:px-5 py-3 text-[10px] md:text-xs text-muted flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                       <span>🔓</span>
                       <span>This contest has ended. You can review the problem statements, but you may not enter or submit new solutions.</span>
                     </div>
-                    <div className="text-[11px] text-gray-500">
+                    <div className="text-[10px] md:text-[11px] text-gray-500">
                       Click a challenge to view the statement only; coding attempts are disabled once the contest has ended.
                     </div>
                   </div>
@@ -178,30 +178,30 @@ export default function ContestPage() {
                     return (
                       <div
                         key={p.id}
-                        className={`border-b border-border ${contestAvailable ? 'hover:bg-background/50 cursor-pointer' : 'bg-gray-100'} p-4 flex items-center justify-between transition-colors ${allPassed ? 'bg-green-500/5' : ''}`}
+                        className={`border-b border-border ${contestAvailable ? 'hover:bg-background/50 cursor-pointer' : 'bg-gray-100'} p-3 md:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-colors ${allPassed ? 'bg-green-500/5' : ''}`}
                         onClick={() => {
                           if (!contestAvailable) return;
                           navigate(`/challenge/${p.id}`);
                         }}
                       >
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3 md:gap-4 min-w-0">
                           {/* Problem letter */}
-                          <span className="text-muted font-bold w-6">{String.fromCharCode(65 + i)}</span>
+                          <span className="text-muted font-bold w-5 md:w-6 text-sm md:text-base shrink-0">{String.fromCharCode(65 + i)}</span>
 
                           {/* Solved checkmark */}
                           {allPassed && (
-                            <span className="text-green-500 text-sm">✓</span>
+                            <span className="text-green-500 text-xs md:text-sm shrink-0">✓</span>
                           )}
 
-                          <span className={`text-base text-foreground font-medium transition-colors ${contestAvailable ? 'hover:text-brand' : 'text-gray-500'}`}>
+                          <span className={`text-sm md:text-base text-foreground font-medium truncate transition-colors ${contestAvailable ? 'hover:text-brand' : 'text-gray-500'}`}>
                             {p.title}
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-3 flex-wrap justify-end">
+                        <div className="flex items-center gap-1.5 md:gap-3 flex-wrap justify-start sm:justify-end ml-8 sm:ml-0">
                           {/* Test case progress badge */}
                           {hasSub && (
-                            <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
+                            <span className={`text-[10px] md:text-xs font-bold px-2 md:px-2.5 py-0.5 md:py-1 rounded-full border ${
                               allPassed
                                 ? 'text-green-500 bg-green-500/10 border-green-500/30'
                                 : 'text-yellow-500 bg-yellow-500/10 border-yellow-500/30'
@@ -210,11 +210,11 @@ export default function ContestPage() {
                             </span>
                           )}
 
-                          <span className={`badge-${p.difficulty.toLowerCase()} text-xs`}>
+                          <span className={`badge-${p.difficulty.toLowerCase()} text-[10px] md:text-xs`}>
                             {p.difficulty}
                           </span>
 
-                          <span className="text-xs font-bold text-brand bg-brand/10 px-2.5 py-1 rounded-full border border-brand/20">
+                          <span className="text-[10px] md:text-xs font-bold text-brand bg-brand/10 px-2 md:px-2.5 py-0.5 md:py-1 rounded-full border border-brand/20">
                             {p.points} Pts
                           </span>
                         </div>
@@ -222,7 +222,7 @@ export default function ContestPage() {
                     );
                   })
                 ) : (
-                  <div className="p-8 text-center text-muted">No problems available for this contest.</div>
+                  <div className="p-6 md:p-8 text-center text-muted text-sm">No problems available for this contest.</div>
                 )}
               </div>
             )}

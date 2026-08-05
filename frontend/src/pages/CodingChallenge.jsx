@@ -414,18 +414,18 @@ export default function CodingChallenge() {
       </div>
 
       {/* Workspace */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden p-2 gap-2">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden p-1 md:p-2 gap-1 md:gap-2">
         {/* Left: Description */}
-        <div className="w-full md:w-[45%] h-[40%] md:h-auto bg-surface rounded-lg border border-border overflow-y-auto p-4 md:p-6 scrollbar-hide">
-          <h2 className="text-xl font-bold text-foreground mb-4">{problem?.title}</h2>
-          <div className="mb-4">
+        <div className="w-full md:w-[45%] h-auto md:h-auto max-h-[40vh] md:max-h-none bg-surface rounded-lg border border-border overflow-y-auto p-3 md:p-6 scrollbar-hide">
+          <h2 className="text-lg md:text-xl font-bold text-foreground mb-3 md:mb-4">{problem?.title}</h2>
+          <div className="mb-3 md:mb-4">
             <span className={`badge-${problem?.difficulty.toLowerCase()}`}>
               {problem?.difficulty}
             </span>
           </div>
           
           <div 
-            className="text-foreground text-sm leading-relaxed problem-desc"
+            className="text-foreground text-xs md:text-sm leading-relaxed problem-desc"
             dangerouslySetInnerHTML={{
               __html: problem?.description
                 .replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground">$1</strong>')

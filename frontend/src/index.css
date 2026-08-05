@@ -209,6 +209,38 @@ body,
   }
 }
 
+/* Mobile-specific fixes */
+@media (max-width: 768px) {
+  .lc-navbar {
+    height: auto;
+    min-height: 50px;
+    padding: 8px 12px;
+  }
+  
+  .lc-card {
+    border-radius: 8px;
+  }
+  
+  .code-editor-root {
+    font-size: 14px;
+  }
+  
+  .code-editor-titlebar {
+    padding: 6px 10px;
+  }
+  
+  .code-editor-filename {
+    font-size: 9px;
+    margin-left: 4px;
+  }
+  
+  .code-editor-dots .dot {
+    width: 8px;
+    height: 8px;
+    margin: 0 3px;
+  }
+}
+
 .webcam-inner {
   background: rgb(var(--color-bg-surface));
   border: 2px solid rgb(var(--color-border-main));

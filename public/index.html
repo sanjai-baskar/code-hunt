@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Code Hunt – AI-powered coding platform with face monitoring. Solve coding challenges in a proctored environment." />
+    <title>Code Hunt – AI Coding Platform</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <script>
+      // Prevent MediaPipe WASM from crashing Monaco's AMD loader with anonymous defines
+      let _originalDefine;
+      Object.defineProperty(window, 'define', {
+        get() {
+          if (!_originalDefine) return undefined;
+          const interceptor = function(...args) {
+            if (args.length > 0 && typeof args[0] !== 'string') {
+               const factory = args[args.length - 1];
+               if (typeof factory === 'function') factory();
+               return;
+            }
+            return _originalDefine.apply(this, args);
+          };
+          interceptor.amd = _originalDefine.amd;
+          return interceptor;
+        },
+        set(val) {
+          _originalDefine = val;
+        }
+      });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script type="module" crossorigin src="/assets/index-XcybWPZO.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Bj95uucI.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
