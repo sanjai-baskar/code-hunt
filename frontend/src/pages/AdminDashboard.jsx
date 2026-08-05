@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import api from '../api/client';
@@ -25,13 +25,15 @@ export default function AdminDashboard() {
   const [webcamEnabled, setWebcamEnabled] = useState(true);
   const [webcamToggling, setWebcamToggling] = useState(false);
   const [yearFilter, setYearFilter] = useState('');
+  const yearFilterRef = useRef('');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      const filter = yearFilterRef.current;
       const results = await Promise.allSettled([
         api.get(`/problems?t=${Date.now()}`),
-        api.get(`/admin/students?t=${Date.now()}${yearFilter ? `&year=${yearFilter}` : ''}`),
+        api.get(`/admin/students?t=${Date.now()}${filter ? `&year=${filter}` : ''}`),
         api.get(`/admin/settings?t=${Date.now()}`),
         api.get(`/contests?t=${Date.now()}`),
       ]);
@@ -46,11 +48,18 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [yearFilter]);
+  }, []);
 
+  // Only fetch on mount
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, []);
+
+  // Re-fetch when year filter changes
+  useEffect(() => {
+    yearFilterRef.current = yearFilter;
+    fetchData();
+  }, [yearFilter]);
 
   const deleteProblem = async (id) => {
     if (!window.confirm('Delete this problem? All related submissions and logs will also be deleted.')) return;
