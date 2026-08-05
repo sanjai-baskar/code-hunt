@@ -625,9 +625,8 @@ body,
   }
 }
 
-/* ── Prevent Clipboard & Text Selection on Mobile / Desktop ────────── */
+/* ── Prevent Clipboard & Text Selection in Secure Arena ────────── */
 .no-copy,
-.problem-desc,
 .code-editor-root,
 .monaco-editor {
   -webkit-touch-callout: none !important;
@@ -636,4 +635,17 @@ body,
   -moz-user-select: none !important;
   -ms-user-select: none !important;
   user-select: none !important;
+}
+
+/* Ensure inputs, textareas, and admin forms always allow full text selection and paste */
+input,
+textarea,
+select,
+.lc-input,
+.admin-selectable {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+  pointer-events: auto !important;
 }

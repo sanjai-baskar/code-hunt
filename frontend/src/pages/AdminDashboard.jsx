@@ -48,10 +48,22 @@ export default function AdminDashboard() {
     }
   }, [yearFilter]);
 
-  useEffect(() => { 
-    fetchData(); 
-    window.addEventListener('focus', fetchData);
-    return () => window.removeEventListener('focus', fetchData);
+  useEffect(() => {
+    fetchData();
+
+    let debounceTimer;
+    const handleFocus = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        fetchData();
+      }, 500);
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearTimeout(debounceTimer);
+    };
   }, [fetchData]);
 
   const deleteProblem = async (id) => {
