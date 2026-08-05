@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import Editor from '@monaco-editor/react';
 
-export default function CodeEditor({ value, onChange, language = 'javascript' }) {
+export default function CodeEditor({ value, onChange, language = 'javascript', isMobile = false }) {
   const editorRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -109,15 +109,15 @@ export default function CodeEditor({ value, onChange, language = 'javascript' })
           }
           options={{
             minimap: { enabled: false },
-            fontSize: 14,
+            fontSize: isMobile ? 12 : 14,
             fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
-            fontLigatures: true,
-            lineNumbers: 'on',
+            fontLigatures: !isMobile,
+            lineNumbers: isMobile ? 'off' : 'on',
             roundedSelection: true,
             scrollBeyondLastLine: false,
             readOnly: false,
             automaticLayout: false, // We handle layout ourselves via ResizeObserver
-            padding: { top: 16, bottom: 16 },
+            padding: { top: isMobile ? 8 : 16, bottom: isMobile ? 8 : 16 },
             cursorBlinking: 'smooth',
             cursorSmoothCaretAnimation: 'on',
             cursorStyle: 'line',
@@ -126,11 +126,11 @@ export default function CodeEditor({ value, onChange, language = 'javascript' })
             smoothScrolling: true,
             mouseWheelZoom: false,
             contextmenu: false,      // Disabled for security (right-click blocked anyway)
-            quickSuggestions: true,
-            suggestOnTriggerCharacters: true,
+            quickSuggestions: !isMobile,
+            suggestOnTriggerCharacters: !isMobile,
             tabSize: 4,
             insertSpaces: true,
-            wordWrap: 'off',
+            wordWrap: isMobile ? 'on' : 'off',
             folding: true,
             lineDecorationsWidth: 10,
             lineNumbersMinChars: 3,

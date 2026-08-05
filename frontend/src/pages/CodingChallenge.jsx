@@ -33,6 +33,9 @@ export default function CodingChallenge() {
   const [webcamEnabled, setWebcamEnabled] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState(null);
+  // Mobile tab: 'problem' | 'editor' | 'console'
+  const [mobileTab, setMobileTab] = useState('problem');
+
   const codeRef = useRef(code);
   const getCode = useCallback(() => codeRef.current, []);
 
@@ -66,7 +69,6 @@ export default function CodingChallenge() {
       .catch((err) => {
         console.error("Failed to load challenge:", err);
         addToast("Error loading challenge. Please try again.", "error");
-        // Don't navigate away immediately, give user a chance or show error state
       })
       .finally(() => {
         setLoading(false);
@@ -82,7 +84,6 @@ export default function CodingChallenge() {
 
     const handleHidden = () => {
       if (isDisqualified || submitted) return;
-      // Log the event
       api.post('/logs', { problemId: id }).catch(() => {});
 
       setLeaveCount((prev) => {
@@ -113,10 +114,7 @@ export default function CodingChallenge() {
       }
     };
 
-    const handleBlur = () => {
-      // window.blur often accompanies tab change; treat same as hidden
-      handleHidden();
-    };
+    const handleBlur = () => { handleHidden(); };
 
     document.addEventListener('visibilitychange', handleVisibility);
     window.addEventListener('blur', handleBlur);
@@ -145,11 +143,7 @@ export default function CodingChallenge() {
       api.post('/logs', { problemId: id }).catch(() => {});
     };
 
-    const onContext = (e) => {
-      // RIGHT-CLICK: Block but DO NOT count as distraction
-      e.preventDefault();
-      // Silently blocked - no toast, no distraction count
-    };
+    const onContext = (e) => { e.preventDefault(); };
 
     document.addEventListener('copy', onCopy);
     document.addEventListener('paste', onPaste);
@@ -162,7 +156,7 @@ export default function CodingChallenge() {
     };
   }, [hasStarted, id, isDisqualified, submitted, addToast]);
 
-  // keyboard shortcuts (Ctrl/Cmd + C/V/A/Z) — disable and warn
+  // keyboard shortcuts disable
   useEffect(() => {
     if (!hasStarted || isDisqualified || submitted) return;
 
@@ -202,10 +196,8 @@ export default function CodingChallenge() {
   };
 
   const handleDistraction = useCallback((direction) => {
-    // Only terminate on real hardware failure (camera physically unavailable)
     if (direction === 'camera-off') {
       setIsDisqualified(true);
-      // Only send problemId — no code snapshot
       api.post('/logs', { problemId: id }).catch(() => {});
       alert('Camera access was lost. Your session has been terminated.');
       localStorage.clear();
@@ -213,7 +205,6 @@ export default function CodingChallenge() {
       return;
     }
 
-    // All other distractions are counted and logged – NOT an immediate disqualification
     setDistractionCount((prev) => {
       const next = prev + 1;
       let label;
@@ -227,7 +218,6 @@ export default function CodingChallenge() {
       else if (direction === 'multiple-faces') label = '👥 CHEATING: Multiple people in frame!';
       else label = `⚠️ Violation: ${direction}`;
       addToast(label, 'warn');
-      // Lightweight log — only problemId, no code snapshot
       api.post('/logs', { problemId: id }).catch(() => {});
       if (next >= 10) {
         setShowBanner(true);
@@ -243,9 +233,10 @@ export default function CodingChallenge() {
     setRunLoading(true);
     try {
       const payload = { code, problemId: id, language };
-
       const { data } = await api.post('/run', payload);
       setTestResults(data);
+      // Auto-switch to console tab on mobile after running
+      setMobileTab('console');
       addToast(data.allPassed ? 'Execution complete!' : 'Execution failed.', data.allPassed ? 'success' : 'warn');
     } catch (err) {
       addToast('Error running code.', 'error');
@@ -267,7 +258,6 @@ export default function CodingChallenge() {
           : `⚠️ Submitted. Only ${data.summary?.passed ?? 0}/${data.summary?.total ?? 0} test cases passed.`,
         data.allPassed ? 'success' : 'warn'
       );
-      // Navigate back to dashboard after 2s so solved count refreshes
       setTimeout(() => navigate('/student'), 2000);
     } catch (err) {
       addToast('Submission failed.', 'error');
@@ -290,15 +280,16 @@ export default function CodingChallenge() {
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground transition-colors duration-300 overflow-hidden">
+      {/* ── Exam start overlay ── */}
       {!hasStarted && (
-        <div className="fixed inset-0 z-[10000] bg-background/95 backdrop-blur flex items-center justify-center p-6 text-center">
-          <div className="max-w-md w-full lc-card p-10 border-2 border-brand bg-surface">
-            <h2 className="text-3xl font-black text-foreground mb-4">Exam Security</h2>
+        <div className="fixed inset-0 z-[10000] bg-background/95 backdrop-blur flex items-center justify-center p-4 text-center">
+          <div className="max-w-md w-full lc-card p-6 sm:p-10 border-2 border-brand bg-surface">
+            <h2 className="text-2xl sm:text-3xl font-black text-foreground mb-4">Exam Security</h2>
             <p className="text-muted text-sm mb-8 leading-relaxed">
               This environment is proctored by AI. By starting, you agree to:
               <br /><br />
               • Automatic <strong>Full Screen</strong> mode<br />
-              {webcamEnabled && <div className="inline">• Active <strong>Face & Gaze</strong> monitoring<br /></div>}
+              {webcamEnabled && <div className="inline">• Active <strong>Face &amp; Gaze</strong> monitoring<br /></div>}
               • <strong>Disqualification</strong> on tab/window switching
             </p>
             <button
@@ -312,10 +303,11 @@ export default function CodingChallenge() {
         </div>
       )}
 
+      {/* ── Camera required overlay ── */}
       {webcamEnabled && !cameraReady && (
-        <div className="fixed inset-0 z-[20000] bg-background/95 backdrop-blur flex items-center justify-center p-6 text-center">
-          <div className="max-w-xl w-full lc-card p-10 border-2 border-red-500 bg-surface shadow-xl">
-            <h2 className="text-3xl font-black text-foreground mb-4">Camera Required</h2>
+        <div className="fixed inset-0 z-[20000] bg-background/95 backdrop-blur flex items-center justify-center p-4 text-center">
+          <div className="max-w-xl w-full lc-card p-6 sm:p-10 border-2 border-red-500 bg-surface shadow-xl">
+            <h2 className="text-2xl sm:text-3xl font-black text-foreground mb-4">Camera Required</h2>
             <p className="text-muted text-sm mb-6 leading-relaxed">
               This exam requires your webcam to be enabled. Please allow camera access in your browser and refresh the page.
             </p>
@@ -344,9 +336,10 @@ export default function CodingChallenge() {
 
       {showBanner && <DistractionBanner count={distractionCount} />}
 
+      {/* ── Rejoin overlay ── */}
       {overlayVisible && (
-        <div className="fixed inset-0 z-[30000] bg-black/60 flex items-center justify-center p-6">
-          <div className="max-w-md w-full lc-card p-8 border-border bg-surface text-center">
+        <div className="fixed inset-0 z-[30000] bg-black/60 flex items-center justify-center p-4">
+          <div className="max-w-md w-full lc-card p-6 sm:p-8 border-border bg-surface text-center">
             <h3 className="text-lg font-bold mb-3">You left the exam window</h3>
             <p className="text-sm text-muted mb-6">You may rejoin once. Click <strong>Rejoin</strong> to continue. Further tab/window switches will terminate your session.</p>
             <div className="flex justify-center gap-3">
@@ -361,21 +354,23 @@ export default function CodingChallenge() {
         </div>
       )}
 
-      {/* Navbar */}
-      <div className="lc-navbar shrink-0 justify-between px-4 md:px-6 bg-surface border-b border-border">
-        <div className="flex items-center gap-2 md:gap-4">
-          <button onClick={() => navigate('/student')} className="text-muted hover:text-foreground text-xs md:text-sm">
-            ← <span className="hidden sm:inline">Problems</span>
+      {/* ══════════════════════════════════════════════════════
+          NAVBAR
+      ══════════════════════════════════════════════════════ */}
+      <div className="lc-navbar shrink-0 justify-between px-3 md:px-6 bg-surface border-b border-border">
+        <div className="flex items-center gap-2 min-w-0">
+          <button onClick={() => navigate('/student')} className="text-muted hover:text-foreground text-xs md:text-sm shrink-0">
+            ←<span className="hidden sm:inline"> Problems</span>
           </button>
-          <span className="text-border">|</span>
-          <h1 className="text-xs md:text-sm font-bold text-foreground truncate max-w-[120px] sm:max-w-none">{problem?.title}</h1>
+          <span className="text-border shrink-0">|</span>
+          <h1 className="text-xs md:text-sm font-bold text-foreground truncate max-w-[100px] sm:max-w-[200px] md:max-w-none">{problem?.title}</h1>
         </div>
-        
-        <div className="flex items-center gap-2 md:gap-6">
-          <select 
-            value={language} 
+
+        <div className="flex items-center gap-1.5 md:gap-4 shrink-0">
+          <select
+            value={language}
             onChange={(e) => handleLanguageChange(e.target.value)}
-            className="bg-background border border-border text-foreground text-xs md:text-sm font-bold rounded px-2 py-1 outline-none focus:border-brand"
+            className="bg-background border border-border text-foreground text-[10px] md:text-sm font-bold rounded px-1.5 py-1 outline-none focus:border-brand"
           >
             <option value="java">Java</option>
             <option value="python">Python</option>
@@ -383,17 +378,18 @@ export default function CodingChallenge() {
             <option value="c">C</option>
           </select>
 
-          <div className="flex items-center gap-2 text-[10px] md:text-xs text-muted">
-             <span className="whitespace-nowrap">⏱ {formatted()}</span>
-             {webcamEnabled && (
-               <>
-                 <span className="text-border">|</span>
-                 <span className={`${distractionCount >= 10 ? 'text-red-500' : 'text-brand'} whitespace-nowrap`}>
-                   👁️ {distractionCount}/10
-                 </span>
-               </>
-             )}
+          <div className="flex items-center gap-1 text-[10px] md:text-xs text-muted">
+            <span className="whitespace-nowrap">⏱ {formatted()}</span>
+            {webcamEnabled && (
+              <>
+                <span className="text-border hidden sm:inline">|</span>
+                <span className={`${distractionCount >= 10 ? 'text-red-500' : 'text-brand'} whitespace-nowrap hidden sm:inline`}>
+                  👁️ {distractionCount}/10
+                </span>
+              </>
+            )}
           </div>
+
           <div className="flex gap-1 md:gap-2">
             <button
               onClick={runCode}
@@ -407,76 +403,181 @@ export default function CodingChallenge() {
               disabled={submitLoading || submitted}
               className="px-2 py-1 md:px-4 md:py-1.5 bg-green-600 hover:bg-green-500 text-white text-[10px] md:text-xs font-bold rounded disabled:opacity-50 transition-colors"
             >
-              {submitLoading ? '...' : submitted ? 'Ok' : 'Submit'}
+              {submitLoading ? '...' : submitted ? '✓ Done' : 'Submit'}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Workspace */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden p-1 md:p-2 gap-1 md:gap-2">
-        {/* Left: Description */}
-        <div className="w-full md:w-[45%] h-auto md:h-auto max-h-[40vh] md:max-h-none bg-surface rounded-lg border border-border overflow-y-auto p-3 md:p-6 scrollbar-hide">
-          <h2 className="text-lg md:text-xl font-bold text-foreground mb-3 md:mb-4">{problem?.title}</h2>
-          <div className="mb-3 md:mb-4">
-            <span className={`badge-${problem?.difficulty.toLowerCase()}`}>
-              {problem?.difficulty}
-            </span>
-          </div>
-          
-          <div 
-            className="text-foreground text-xs md:text-sm leading-relaxed problem-desc"
-            dangerouslySetInnerHTML={{
-              __html: problem?.description
-                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground">$1</strong>')
-                .replace(/`([^`]+)`/g, '<code class="bg-background border border-border px-1.5 py-0.5 rounded text-brand font-mono text-[13px]">$1</code>')
-                .replace(/```(java|js)?\n?([\s\S]*?)```/g, '<pre class="bg-background border border-border p-4 rounded-lg my-4 overflow-x-auto"><code class="text-muted">$2</code></pre>')
-                .replace(/\n/g, '<br/>')
-            }}
-          />
+      {/* ══════════════════════════════════════════════════════
+          MOBILE TAB BAR  (hidden on md+)
+      ══════════════════════════════════════════════════════ */}
+      <div className="flex md:hidden shrink-0 border-b border-border bg-surface">
+        {[
+          { key: 'problem', label: '📄 Problem' },
+          { key: 'editor',  label: '💻 Editor'  },
+          { key: 'console', label: `🖥 Console${testResults ? ' ●' : ''}` },
+        ].map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setMobileTab(key)}
+            className={`flex-1 py-2 text-[11px] font-bold transition-colors border-b-2 ${
+              mobileTab === key
+                ? 'text-brand border-brand'
+                : 'text-muted border-transparent hover:text-foreground'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
-          <div className="mt-8 pt-8 border-t border-border">
+      {/* ══════════════════════════════════════════════════════
+          WORKSPACE
+      ══════════════════════════════════════════════════════ */}
+      <div className="flex-1 overflow-hidden">
+
+        {/* ── DESKTOP: side-by-side split ── */}
+        <div className="hidden md:flex h-full flex-row p-2 gap-2">
+          {/* Left: Problem description */}
+          <div className="w-[45%] bg-surface rounded-lg border border-border overflow-y-auto p-6 scrollbar-hide">
+            <h2 className="text-xl font-bold text-foreground mb-4">{problem?.title}</h2>
+            <div className="mb-4">
+              <span className={`badge-${problem?.difficulty.toLowerCase()}`}>{problem?.difficulty}</span>
+            </div>
+            <div
+              className="text-foreground text-sm leading-relaxed problem-desc"
+              dangerouslySetInnerHTML={{
+                __html: problem?.description
+                  .replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground">$1</strong>')
+                  .replace(/`([^`]+)`/g, '<code class="bg-background border border-border px-1.5 py-0.5 rounded text-brand font-mono text-[13px]">$1</code>')
+                  .replace(/```(java|js)?\n?([\s\S]*?)```/g, '<pre class="bg-background border border-border p-4 rounded-lg my-4 overflow-x-auto"><code class="text-muted">$2</code></pre>')
+                  .replace(/\n/g, '<br/>')
+              }}
+            />
             {testResults && (
-              <TestResults results={testResults.results} summary={testResults.summary} />
+              <div className="mt-8 pt-8 border-t border-border">
+                <TestResults results={testResults.results} summary={testResults.summary} />
+              </div>
+            )}
+          </div>
+
+          {/* Right: Editor + console */}
+          <div className="flex-1 flex flex-col gap-2 overflow-hidden">
+            <div className="flex-1 min-h-0">
+              <CodeEditor value={code} onChange={setCode} language={language} />
+            </div>
+            {testResults && (
+              <div className="h-[30%] bg-[#0d1117] rounded-lg border border-border p-4 overflow-y-auto font-mono text-xs">
+                <h3 className="text-[10px] font-bold text-muted uppercase mb-3 tracking-wider">Console Output</h3>
+                <div className="space-y-3">
+                  {testResults.results.map((res, idx) => (
+                    <div key={idx}>
+                      <span className={`text-[10px] font-bold uppercase tracking-wider ${res.passed ? 'text-green-400' : 'text-red-400'}`}>
+                        {'▶ Test Case #'}{idx + 1} {res.passed ? '✓' : '✗'}
+                      </span>
+                      {res.actual ? (
+                        <pre className={`mt-1 whitespace-pre-wrap break-all leading-relaxed ${res.error ? 'text-red-300' : 'text-green-300'}`}>
+                          {res.actual}
+                        </pre>
+                      ) : (
+                        <p className="text-muted italic mt-1">(no output)</p>
+                      )}
+                      {res.time != null && (
+                        <p className="text-[9px] text-muted mt-0.5">Exec: {Math.round(res.time)}ms</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Right: Editor */}
-        <div className="flex-1 flex flex-col gap-2 overflow-hidden">
-          <div className="flex-1 min-h-0">
-            <CodeEditor value={code} onChange={setCode} language={language} />
-          </div>
+        {/* ── MOBILE: single pane controlled by tab bar ── */}
+        <div className="flex md:hidden h-full flex-col">
 
-          {/* Bottom Panel — Console output */}
-          {testResults && (
-            <div className="h-[30%] bg-[#0d1117] rounded-lg border border-border p-4 overflow-y-auto font-mono text-xs">
-              <h3 className="text-[10px] font-bold text-muted uppercase mb-3 tracking-wider">Console Output</h3>
-              <div className="space-y-3">
-                {testResults.results.map((res, idx) => (
-                  <div key={idx}>
-                    <span className={`text-[10px] font-bold uppercase tracking-wider ${res.passed ? 'text-green-400' : 'text-red-400'}`}>
-                      {'▶ Test Case #'}{idx + 1} {res.passed ? '✓' : '✗'}
-                    </span>
-                    {res.actual ? (
-                      <pre className={`mt-1 whitespace-pre-wrap break-all leading-relaxed ${res.error ? 'text-red-300' : 'text-green-300'}`}>
-                        {res.actual}
-                      </pre>
-                    ) : (
-                      <p className="text-muted italic mt-1">(no output)</p>
-                    )}
-                    {res.time != null && (
-                      <p className="text-[9px] text-muted mt-0.5">Exec: {Math.round(res.time)}ms</p>
-                    )}
-                  </div>
-                ))}
+          {/* Problem tab */}
+          {mobileTab === 'problem' && (
+            <div className="flex-1 overflow-y-auto p-4 bg-surface">
+              <h2 className="text-lg font-bold text-foreground mb-3">{problem?.title}</h2>
+              <div className="mb-3">
+                <span className={`badge-${problem?.difficulty.toLowerCase()}`}>{problem?.difficulty}</span>
               </div>
+              <div
+                className="text-foreground text-sm leading-relaxed problem-desc"
+                dangerouslySetInnerHTML={{
+                  __html: problem?.description
+                    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground">$1</strong>')
+                    .replace(/`([^`]+)`/g, '<code class="bg-background border border-border px-1.5 py-0.5 rounded text-brand font-mono text-xs">$1</code>')
+                    .replace(/```(java|js)?\n?([\s\S]*?)```/g, '<pre class="bg-background border border-border p-3 rounded-lg my-3 overflow-x-auto text-xs"><code class="text-muted">$2</code></pre>')
+                    .replace(/\n/g, '<br/>')
+                }}
+              />
+              {/* Quick CTA to switch to editor */}
+              <button
+                onClick={() => setMobileTab('editor')}
+                className="mt-6 w-full lc-btn-primary py-3 font-bold"
+              >
+                Open Editor →
+              </button>
+            </div>
+          )}
+
+          {/* Editor tab */}
+          {mobileTab === 'editor' && (
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <CodeEditor value={code} onChange={setCode} language={language} isMobile />
+            </div>
+          )}
+
+          {/* Console tab */}
+          {mobileTab === 'console' && (
+            <div className="flex-1 overflow-y-auto bg-[#0d1117] p-4 font-mono text-xs">
+              {testResults ? (
+                <>
+                  <h3 className="text-[10px] font-bold text-muted uppercase mb-3 tracking-wider">Console Output</h3>
+                  <div className="space-y-4">
+                    {testResults.results.map((res, idx) => (
+                      <div key={idx}>
+                        <span className={`text-[10px] font-bold uppercase tracking-wider ${res.passed ? 'text-green-400' : 'text-red-400'}`}>
+                          ▶ Test Case #{idx + 1} {res.passed ? '✓' : '✗'}
+                        </span>
+                        {res.actual ? (
+                          <pre className={`mt-1 whitespace-pre-wrap break-all leading-relaxed ${res.error ? 'text-red-300' : 'text-green-300'}`}>
+                            {res.actual}
+                          </pre>
+                        ) : (
+                          <p className="text-muted italic mt-1">(no output)</p>
+                        )}
+                        {res.time != null && (
+                          <p className="text-[9px] text-muted mt-0.5">Exec: {Math.round(res.time)}ms</p>
+                        )}
+                      </div>
+                    ))}
+                    <div className="mt-4 pt-4 border-t border-gray-700">
+                      <TestResults results={testResults.results} summary={testResults.summary} />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
+                  <span className="text-3xl">🖥</span>
+                  <p className="text-muted text-sm">Run your code to see output here.</p>
+                  <button
+                    onClick={() => setMobileTab('editor')}
+                    className="mt-2 lc-btn-primary px-6 py-2 text-xs font-bold"
+                  >
+                    Go to Editor
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Webcam Monitor — only if webcam is enabled by admin */}
+      {/* Webcam Monitor */}
       {webcamEnabled && (
         <WebcamMonitor
           onDistraction={handleDistraction}

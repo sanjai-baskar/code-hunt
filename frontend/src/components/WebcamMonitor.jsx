@@ -51,18 +51,30 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId, onCam
 
   const handleMouseDown = useCallback((e) => {
     setIsDragging(true);
-    setDragOffset({ x: e.clientX - position.x, y: e.clientY - position.y });
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    setDragOffset({ x: clientX - position.x, y: clientY - position.y });
   }, [position]);
 
   useEffect(() => {
     if (!isDragging) return;
-    const move = (e) => setPosition({ x: e.clientX - dragOffset.x, y: e.clientY - dragOffset.y });
+    const move = (e) => {
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const newX = Math.max(0, Math.min(window.innerWidth - 170, clientX - dragOffset.x));
+      const newY = Math.max(0, Math.min(window.innerHeight - 120, clientY - dragOffset.y));
+      setPosition({ x: newX, y: newY });
+    };
     const up = () => setIsDragging(false);
     window.addEventListener('mousemove', move);
     window.addEventListener('mouseup', up);
+    window.addEventListener('touchmove', move);
+    window.addEventListener('touchend', up);
     return () => {
       window.removeEventListener('mousemove', move);
       window.removeEventListener('mouseup', up);
+      window.removeEventListener('touchmove', move);
+      window.removeEventListener('touchend', up);
     };
   }, [isDragging, dragOffset]);
 
@@ -71,6 +83,7 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId, onCam
       className="webcam-monitor w-[160px] md:w-[220px]"
       style={{ left: position.x, top: position.y }}
       onMouseDown={handleMouseDown}
+      onTouchStart={handleMouseDown}
     >
       <div className="webcam-inner">
         <div className="webcam-header">
