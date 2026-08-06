@@ -1,6 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
+const FALLBACK_NEWS = [
+  {
+    id: 1,
+    title: '10 Essential JavaScript Tricks Every Developer Should Know in 2026',
+    description: 'From optional chaining to nullish coalescing, explore the modern JS features that will supercharge your productivity.',
+    url: 'https://dev.to/t/javascript',
+    cover_image: null,
+    published_at: new Date().toISOString(),
+    tag_list: ['javascript', 'webdev', 'programming'],
+    user: { name: 'Dev.to Community', profile_image_90: null },
+  },
+  {
+    id: 2,
+    title: 'Understanding Big-O Notation: A Visual Guide for Beginners',
+    description: 'Time complexity doesn\'t have to be scary. This guide breaks down O(n), O(log n), and more with real examples.',
+    url: 'https://dev.to/t/algorithms',
+    cover_image: null,
+    published_at: new Date().toISOString(),
+    tag_list: ['algorithms', 'computerscience', 'beginners'],
+    user: { name: 'Dev.to Community', profile_image_90: null },
+  },
+  {
+    id: 3,
+    title: 'How to Ace Your Next Coding Interview: Tips from Top Engineers',
+    description: 'Preparation strategies, practice habits, and mindset tips from engineers at Google, Meta, and Amazon.',
+    url: 'https://dev.to/t/career',
+    cover_image: null,
+    published_at: new Date().toISOString(),
+    tag_list: ['career', 'interview', 'coding'],
+    user: { name: 'Dev.to Community', profile_image_90: null },
+  },
+];
+
 export default function Home() {
   const [cameraImageLoaded, setCameraImageLoaded] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -8,10 +41,30 @@ export default function Home() {
   const [newsLoading, setNewsLoading] = useState(true);
 
   useEffect(() => {
-    fetch('https://dev.to/api/articles?tag=programming&top=1&per_page=3')
-      .then(res => res.json())
-      .then(data => { setNews(data); setNewsLoading(false); })
-      .catch(() => setNewsLoading(false));
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000); // 8s timeout
+
+    fetch('https://dev.to/api/articles?tag=programming&per_page=6&state=fresh', {
+      signal: controller.signal,
+      headers: { 'Accept': 'application/json' },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('API error');
+        return res.json();
+      })
+      .then(data => {
+        clearTimeout(timer);
+        const valid = Array.isArray(data) ? data.filter(a => a.title).slice(0, 3) : [];
+        setNews(valid.length > 0 ? valid : FALLBACK_NEWS);
+        setNewsLoading(false);
+      })
+      .catch(() => {
+        clearTimeout(timer);
+        setNews(FALLBACK_NEWS);
+        setNewsLoading(false);
+      });
+
+    return () => { clearTimeout(timer); controller.abort(); };
   }, []);
 
   return (
