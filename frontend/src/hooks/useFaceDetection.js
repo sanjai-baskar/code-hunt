@@ -2,7 +2,13 @@ import { useEffect, useRef } from 'react';
 
 export function useFaceDetection(videoRef, enabled, onResults) {
   const faceMeshRef = useRef(null);
+  // Keep a stable ref to the latest onResults callback so the FaceMesh
+  // instance always calls the most-current handler without needing to be
+  // re-created every time the callback reference changes.
+  const onResultsRef = useRef(onResults);
+  useEffect(() => { onResultsRef.current = onResults; }, [onResults]);
 
+  // ── Init FaceMesh once (or when enabled/videoRef changes) ──────────────
   useEffect(() => {
     if (!enabled || !videoRef.current) return;
     let fm;
@@ -17,7 +23,9 @@ export function useFaceDetection(videoRef, enabled, onResults) {
         minDetectionConfidence: 0.5,
         minTrackingConfidence: 0.5,
       });
-      fm.onResults(onResults);
+      // Delegate to the ref so we never need to rebuild FaceMesh when the
+      // parent's callback identity changes.
+      fm.onResults((results) => onResultsRef.current(results));
       faceMeshRef.current = fm;
     } catch (err) {
       console.error('FaceMesh init error', err);
@@ -26,17 +34,23 @@ export function useFaceDetection(videoRef, enabled, onResults) {
     return () => {
       if (faceMeshRef.current) {
         faceMeshRef.current.close();
+        faceMeshRef.current = null;
       }
     };
-  }, [enabled, videoRef, onResults]);
+  }, [enabled, videoRef]); // intentionally omit onResults — using ref instead
 
+  // ── Animation loop: send frames to FaceMesh ────────────────────────────
   useEffect(() => {
-    if (!enabled || !faceMeshRef.current || !videoRef.current) return;
+    if (!enabled || !videoRef.current) return;
     let animId;
     let frameCount = 0;
 
     const send = async () => {
-      if (videoRef.current && videoRef.current.readyState >= 2) {
+      if (
+        faceMeshRef.current &&
+        videoRef.current &&
+        videoRef.current.readyState >= 2
+      ) {
         frameCount++;
         if (frameCount % 2 === 0) { // Process every 2nd frame
           try {

@@ -32,6 +32,8 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId, onCam
   }, [streamReady, camError, onCameraStatusChange]);
 
   // Face detection results handler
+  // lastObjects is a ref (stable identity) — read .current inside the callback.
+  // Only processDetection is a real reactive dependency here.
   const handleFaceResults = useCallback((results) => {
     processDetection(results, lastObjects.current);
     if (results.multiFaceLandmarks?.length) {
@@ -39,7 +41,7 @@ export default function WebcamMonitor({ onDistraction, getCode, problemId, onCam
     } else {
       setStatus('Face Hidden');
     }
-  }, [processDetection, lastObjects]);
+  }, [processDetection]); // lastObjects ref is always stable, no need to list it
 
   useFaceDetection(videoRef, streamReady, handleFaceResults);
 
