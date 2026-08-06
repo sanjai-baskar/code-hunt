@@ -28,6 +28,7 @@ export default function AdminDashboard() {
   const yearFilterRef = useRef('');
   const [classFilter, setClassFilter] = useState('');
   const classFilterRef = useRef('');
+  const [searchQuery, setSearchQuery] = useState('');
   const isMountedRef = useRef(false);
 
   const fetchData = useCallback(async (showSpinner = false) => {
@@ -437,10 +438,21 @@ export default function AdminDashboard() {
                   <option value="C">C</option>
                   <option value="D">D</option>
                 </select>
+                <input
+                  type="text"
+                  placeholder="Search by name or email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="lc-input bg-input border-border text-foreground focus:border-brand text-xs md:text-sm px-3 py-2 rounded-lg w-full sm:w-auto ml-2"
+                />
               </div>
             </div>
             <div className="space-y-3">
-              {students.map((s) => (
+              {students.filter(s => {
+                if (!searchQuery) return true;
+                const query = searchQuery.toLowerCase();
+                return (s.name && s.name.toLowerCase().includes(query)) || (s.email && s.email.toLowerCase().includes(query));
+              }).map((s) => (
                 <div key={s.id} className="lc-card p-4 md:p-5 border-border bg-surface">
                   <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
                     <div className="flex-1 min-w-0 w-full">
@@ -498,8 +510,12 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               ))}
-              {students.length === 0 && (
-                <div className="p-8 text-center text-muted lc-card bg-surface border-border">No students registered yet.</div>
+              {students.filter(s => {
+                if (!searchQuery) return true;
+                const query = searchQuery.toLowerCase();
+                return (s.name && s.name.toLowerCase().includes(query)) || (s.email && s.email.toLowerCase().includes(query));
+              }).length === 0 && (
+                <div className="p-8 text-center text-muted lc-card bg-surface border-border">No students found.</div>
               )}
             </div>
           </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
+import ChatBot from '../components/ChatBot';
 
 
 export default function StudentDashboard() {
@@ -319,6 +320,9 @@ export default function StudentDashboard() {
           </div>
         </div>
       )}
+
+      {/* AI ChatBot */}
+      <ChatBot />
     </div>
   );
 }

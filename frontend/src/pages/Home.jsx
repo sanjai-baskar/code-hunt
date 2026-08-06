@@ -1,15 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-
 
 export default function Home() {
   const [cameraImageLoaded, setCameraImageLoaded] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [news, setNews] = useState([]);
+  const [newsLoading, setNewsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('https://dev.to/api/articles?tag=programming&top=1&per_page=3')
+      .then(res => res.json())
+      .then(data => { setNews(data); setNewsLoading(false); })
+      .catch(() => setNewsLoading(false));
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-      {/* Hero Section */}
-<nav className="lc-navbar justify-between border-none bg-transparent pt-4 relative">
+      {/* Navbar */}
+      <nav className="lc-navbar justify-between border-none bg-transparent pt-4 relative">
         <div className="flex items-center gap-2">
           <span className="text-2xl">🎯</span>
           <span className="text-xl font-bold">Code<span className="text-brand">Hunt</span></span>
@@ -32,13 +40,14 @@ export default function Home() {
       </nav>
 
       <main className="w-full px-4 sm:px-6 pt-12 md:pt-20 pb-24">
+        {/* Hero */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center">
           <div className="animate-fade-in order-1">
             <h1 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight mb-6 leading-[1.1]">
               The Future of <span className="text-brand">Academic Integrity</span> is Here.
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-muted mb-8 md:mb-10 leading-relaxed max-w-xl">
-              Code Hunt is an AI-powered proctoring platform designed to ensure fair play in coding assessments. 
+              Code Hunt is an AI-powered proctoring platform designed to ensure fair play in coding assessments.
               With real-time gaze monitoring, object detection, and behavioral analysis, we protect the value of your skills.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 md:gap-6">
@@ -49,15 +58,13 @@ export default function Home() {
                 Admin Portal
               </Link>
             </div>
-
             <div className="mt-8 md:mt-12 flex items-center gap-6">
               <div className="flex -space-x-3">
                 {[1, 2, 3, 4].map(i => (
                   <div key={i} className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-background bg-surface" />
                 ))}
               </div>
-              <p className="text-sm text-muted">
-              </p>
+              <p className="text-sm text-muted"></p>
             </div>
           </div>
 
@@ -93,7 +100,7 @@ export default function Home() {
               <h3 className="text-sm font-bold mb-2 text-foreground">Security Report</h3>
               <div className="space-y-2">
                 <div className="h-1.5 w-full bg-background rounded-full overflow-hidden border border-border">
-                   <div className="h-full w-[90%] bg-green-500" />
+                  <div className="h-full w-[90%] bg-green-500" />
                 </div>
                 <p className="text-[10px] text-muted font-medium">98% Integrity Score</p>
               </div>
@@ -103,29 +110,109 @@ export default function Home() {
 
         {/* Features */}
         <section className="mt-16 md:mt-40 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
-           {[
-             { title: 'AI Proctoring', desc: 'Real-time eye tracking and object detection powered by MediaPipe and TensorFlow.', icon: '👁️' },
-             { title: 'Code Protection', desc: 'Secure environment preventing copy-pasting, multi-tab usage, and external tools.', icon: '🛡️' },
-             { title: 'Test Efficiency', desc: 'Comprehensive logging and instant results for both students and instructors.', icon: '⚡' },
-           ].map(f => (
-             <div key={f.title} className="lc-card p-6 md:p-8 border-border bg-surface hover:border-brand transition-colors cursor-default">
-               <span className="text-3xl md:text-4xl mb-3 md:mb-4 block">{f.icon}</span>
-               <h3 className="text-lg md:text-xl font-bold mb-3 text-foreground">{f.title}</h3>
-               <p className="text-muted text-sm leading-relaxed">{f.desc}</p>
-             </div>
-           ))}
-         </section>
-       </main>
+          {[
+            { title: 'AI Proctoring', desc: 'Real-time eye tracking and object detection powered by MediaPipe and TensorFlow.', icon: '👁️' },
+            { title: 'Code Protection', desc: 'Secure environment preventing copy-pasting, multi-tab usage, and external tools.', icon: '🛡️' },
+            { title: 'Test Efficiency', desc: 'Comprehensive logging and instant results for both students and instructors.', icon: '⚡' },
+          ].map(f => (
+            <div key={f.title} className="lc-card p-6 md:p-8 border-border bg-surface hover:border-brand transition-colors cursor-default">
+              <span className="text-3xl md:text-4xl mb-3 md:mb-4 block">{f.icon}</span>
+              <h3 className="text-lg md:text-xl font-bold mb-3 text-foreground">{f.title}</h3>
+              <p className="text-muted text-sm leading-relaxed">{f.desc}</p>
+            </div>
+          ))}
+        </section>
 
-       <footer className="border-t border-border py-8 md:py-12 mt-16 md:mt-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6">
-             <div className="flex items-center gap-2">
-               <span className="text-xl font-bold text-foreground">Code<span className="text-brand">Hunt</span></span>
-             </div>
-             <p className="text-sm text-muted text-center">© 2026 Code Hunt Platform. Secure. Fair. Transparent.</p>
-             <Link to="/admin/login" className="text-xs text-muted hover:text-foreground uppercase tracking-widest font-bold transition-colors">Admin Login</Link>
+        {/* Daily Tech News */}
+        <section className="mt-16 md:mt-24">
+          <div className="flex items-center gap-3 mb-8 md:mb-10">
+            <span className="text-3xl">📰</span>
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground">Daily Tech &amp; Coding Updates</h2>
+              <p className="text-xs text-muted mt-1">Latest articles from the developer community</p>
+            </div>
           </div>
-       </footer>
-     </div>
-   );
- }
+
+          {newsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="lc-card overflow-hidden border-border bg-surface animate-pulse">
+                  <div className="aspect-video bg-border w-full" />
+                  <div className="p-5 space-y-3">
+                    <div className="h-3 bg-border rounded w-2/3" />
+                    <div className="h-5 bg-border rounded w-full" />
+                    <div className="h-4 bg-border rounded w-full" />
+                    <div className="h-4 bg-border rounded w-3/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : news.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {news.map(article => (
+                <a
+                  key={article.id}
+                  href={article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="lc-card overflow-hidden border-border bg-surface hover:border-brand transition-all duration-300 group flex flex-col"
+                >
+                  {article.cover_image ? (
+                    <div className="aspect-video w-full overflow-hidden bg-background">
+                      <img
+                        src={article.cover_image}
+                        alt={article.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                  ) : (
+                    <div className="aspect-video w-full bg-gradient-to-br from-brand/20 to-background flex items-center justify-center">
+                      <span className="text-5xl opacity-40">💻</span>
+                    </div>
+                  )}
+                  <div className="p-5 flex-1 flex flex-col">
+                    <div className="flex items-center gap-2 mb-3">
+                      {article.user?.profile_image_90 && (
+                        <img src={article.user.profile_image_90} alt={article.user.name} className="w-6 h-6 rounded-full border border-border" />
+                      )}
+                      <span className="text-[10px] md:text-xs text-muted font-medium truncate">{article.user?.name}</span>
+                      <span className="text-border shrink-0">•</span>
+                      <span className="text-[10px] md:text-xs text-muted shrink-0">{new Date(article.published_at).toLocaleDateString()}</span>
+                    </div>
+                    <h3 className="text-sm md:text-base font-bold text-foreground mb-2 group-hover:text-brand transition-colors line-clamp-2 flex-1">
+                      {article.title}
+                    </h3>
+                    <p className="text-xs text-muted line-clamp-2 mb-4">
+                      {article.description}
+                    </p>
+                    <div className="flex gap-2 flex-wrap mt-auto">
+                      {(article.tag_list || []).slice(0, 3).map(tag => (
+                        <span key={tag} className="text-[9px] md:text-[10px] px-2 py-0.5 rounded-full bg-brand/10 text-brand font-bold border border-brand/20">
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div className="lc-card p-10 text-center text-muted border-border bg-surface">
+              <p className="text-sm">Unable to load news. Check back later.</p>
+            </div>
+          )}
+        </section>
+      </main>
+
+      <footer className="border-t border-border py-8 md:py-12 mt-16 md:mt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6">
+          <div className="flex items-center gap-2">
+            <span className="text-xl font-bold text-foreground">Code<span className="text-brand">Hunt</span></span>
+          </div>
+          <p className="text-sm text-muted text-center">© 2026 Code Hunt Platform. Secure. Fair. Transparent.</p>
+          <Link to="/admin/login" className="text-xs text-muted hover:text-foreground uppercase tracking-widest font-bold transition-colors">Admin Login</Link>
+        </div>
+      </footer>
+    </div>
+  );
+}
