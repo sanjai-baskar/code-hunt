@@ -113,6 +113,20 @@ export default function AdminDashboard() {
     }
   };
 
+  const toggleStudentWebcam = async (studentId, currentStatus) => {
+    try {
+      const nextState = !currentStatus;
+      // Optimistically update the UI
+      setStudents((prev) => prev.map(s => s.id === studentId ? { ...s, webcamEnabled: nextState } : s));
+      
+      await api.post(`/admin/student/${studentId}/webcam`, { webcamEnabled: nextState });
+    } catch (err) {
+      // Revert on failure
+      setStudents((prev) => prev.map(s => s.id === studentId ? { ...s, webcamEnabled: currentStatus } : s));
+      alert('Failed to update student webcam setting: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
   const logout = () => { localStorage.clear(); navigate('/login'); };
 
   const downloadStudentsExcel = () => {
@@ -464,12 +478,23 @@ export default function AdminDashboard() {
                         )}
                       </div>
                     </div>
-                    <button
-                      onClick={() => setSelectedStudent(s)}
-                      className="bg-background border border-border text-foreground text-xs md:text-sm px-3 md:px-4 py-1.5 md:py-2 rounded hover:border-brand transition-colors font-medium shrink-0 w-full sm:w-auto"
-                    >
-                      Details
-                    </button>
+                    <div className="flex flex-col sm:flex-col sm:items-end gap-2 w-full sm:w-auto mt-3 sm:mt-0">
+                      <div className="flex items-center gap-2 mb-2 sm:mb-0">
+                        <span className="text-xs text-muted font-bold">Webcam:</span>
+                        <button
+                          onClick={() => toggleStudentWebcam(s.id, s.webcamEnabled ?? true)}
+                          className={`relative inline-flex items-center h-5 w-10 rounded-full shrink-0 transition-all duration-300 focus:outline-none ${(s.webcamEnabled ?? true) ? 'bg-green-500' : 'bg-red-500/60'}`}
+                        >
+                          <span className={`inline-block w-3.5 h-3.5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${(s.webcamEnabled ?? true) ? 'translate-x-5' : 'translate-x-1'}`} />
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => setSelectedStudent(s)}
+                        className="bg-background border border-border text-foreground text-xs md:text-sm px-3 md:px-4 py-1.5 md:py-2 rounded hover:border-brand transition-colors font-medium shrink-0 w-full sm:w-auto"
+                      >
+                        Details
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

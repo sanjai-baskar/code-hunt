@@ -20,6 +20,7 @@ router.get('/students', authenticateToken, requireAdmin, async (req, res) => {
         email: true,
         class: true,
         year: true,
+        webcamEnabled: true,
         createdAt: true,
         submissions: {
           where: { passedTestCases: true },
@@ -62,6 +63,7 @@ router.get('/students', authenticateToken, requireAdmin, async (req, res) => {
         email: s.email,
         class: s.class,
         year: s.year,
+        webcamEnabled: s.webcamEnabled,
         createdAt: s.createdAt,
         solvedProblems: uniqueSolvedProblems,
         solvedCount: uniqueSolvedProblems.length,
@@ -172,7 +174,7 @@ router.get('/student/:id', authenticateToken, requireAdmin, async (req, res) => 
     const hadDistraction = summaries.some(d => d.hadDistraction);
 
     res.json({
-      student: { id: student.id, name: student.name, email: student.email, class: student.class, year: student.year },
+      student: { id: student.id, name: student.name, email: student.email, class: student.class, year: student.year, webcamEnabled: student.webcamEnabled },
       submissions: student.submissions,
       solvedProblems,
       distractionSummaries: student.distractionSummaries,
@@ -181,6 +183,26 @@ router.get('/student/:id', authenticateToken, requireAdmin, async (req, res) => 
     });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
+
+// POST /api/admin/student/:id/webcam — toggle webcam on/off for a specific student
+router.post('/student/:id/webcam', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { webcamEnabled } = req.body;
+    if (typeof webcamEnabled !== 'boolean') {
+      return res.status(400).json({ error: 'webcamEnabled must be a boolean' });
+    }
+
+    const student = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { webcamEnabled },
+    });
+
+    res.json({ id: student.id, webcamEnabled: student.webcamEnabled });
+  } catch (err) {
+    console.error('Student webcam POST error:', err);
     res.status(500).json({ error: 'Internal server error', details: err.message });
   }
 });

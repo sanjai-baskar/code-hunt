@@ -18,6 +18,7 @@ model User {
   createdAt           DateTime              @default(now())
   submissions         Submission[]
   distractionSummaries DistractionSummary[]
+  webcamEnabled       Boolean               @default(true)
 }
 
 model Problem {
