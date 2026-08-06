@@ -26,15 +26,18 @@ export default function AdminDashboard() {
   const [webcamToggling, setWebcamToggling] = useState(false);
   const [yearFilter, setYearFilter] = useState('');
   const yearFilterRef = useRef('');
+  const [classFilter, setClassFilter] = useState('');
+  const classFilterRef = useRef('');
   const isMountedRef = useRef(false);
 
   const fetchData = useCallback(async (showSpinner = false) => {
     if (showSpinner) setLoading(true);
     try {
-      const filter = yearFilterRef.current;
+      const year = yearFilterRef.current;
+      const cls = classFilterRef.current;
       const results = await Promise.allSettled([
         api.get(`/problems?t=${Date.now()}`),
-        api.get(`/admin/students?t=${Date.now()}${filter ? `&year=${filter}` : ''}`),
+        api.get(`/admin/students?t=${Date.now()}${year ? `&year=${year}` : ''}${cls ? `&class=${cls}` : ''}`),
         api.get(`/admin/settings?t=${Date.now()}`),
         api.get(`/contests?t=${Date.now()}`),
       ]);
@@ -65,6 +68,16 @@ export default function AdminDashboard() {
     }
     fetchData(false);
   }, [yearFilter]);
+
+  // Re-fetch when class filter changes (skip first render)
+  useEffect(() => {
+    classFilterRef.current = classFilter;
+    if (!isMountedRef.current) {
+      // Already handled by year effect's isMounted flag
+      return;
+    }
+    fetchData(false);
+  }, [classFilter]);
 
   const deleteProblem = async (id) => {
     if (!window.confirm('Delete this problem? All related submissions and logs will also be deleted.')) return;
@@ -398,6 +411,17 @@ export default function AdminDashboard() {
                   <option value="I">I</option>
                   <option value="II">II</option>
                   <option value="III">III</option>
+                </select>
+                <select
+                  value={classFilter}
+                  onChange={(e) => setClassFilter(e.target.value)}
+                  className="lc-input bg-input border-border text-foreground focus:border-brand text-xs md:text-sm px-3 py-2 rounded-lg w-full sm:w-auto ml-2"
+                >
+                  <option value="">All Classes</option>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
                 </select>
               </div>
             </div>
